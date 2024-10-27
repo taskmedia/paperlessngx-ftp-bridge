@@ -15,11 +15,12 @@ func main() {
 	ftpServer := os.Getenv("FTP_SERVER")
 	ftpUser := os.Getenv("FTP_USER")
 	ftpPassword := os.Getenv("FTP_PASSWORD")
-	apiURL := os.Getenv("API_URL")
-	apiUser := os.Getenv("API_USER")
-	apiPassword := os.Getenv("API_PASSWORD")
+	paperlessUrl := os.Getenv("PAPERLESS_URL")
+	paperlessUser := os.Getenv("PAPERLESS_USER")
+	paperlessPassword := os.Getenv("PAPERLESS_PASSWORD")
+	paperlessApiUrl := paperlessUrl + "/api/documents/post_document/"
 
-	if ftpServer == "" || ftpUser == "" || ftpPassword == "" || apiURL == "" || apiUser == "" || apiPassword == "" {
+	if ftpServer == "" || ftpUser == "" || ftpPassword == "" || paperlessUrl == "" || paperlessUser == "" || paperlessPassword == "" {
 		log.Fatalf("One or more required environment variables are missing")
 	}
 
@@ -66,9 +67,9 @@ func main() {
 
 		// Upload the file to the Paperless-ngx API
 		apiResp, err := client.R().
-			SetBasicAuth(apiUser, apiPassword).
+			SetBasicAuth(paperlessUser, paperlessPassword).
 			SetFileReader("document", entry.Name, buf).
-			Post(apiURL)
+			Post(paperlessApiUrl)
 
 		if err != nil {
 			log.Printf("Failed to upload file %s to API: %v", entry.Name, err)
