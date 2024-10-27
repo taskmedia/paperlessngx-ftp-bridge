@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// Establish FTP connection with explicit SSL/TLS
-	conn, err := ftp.Dial(ftpServer, ftp.DialWithTimeout(5*time.Second), ftp.DialWithTLS(&tls.Config{
+	conn, err := ftp.Dial(ftpServer, ftp.DialWithTimeout(5*time.Second), ftp.DialWithExplicitTLS(&tls.Config{
 		InsecureSkipVerify: true,
 	}))
 	if err != nil {
