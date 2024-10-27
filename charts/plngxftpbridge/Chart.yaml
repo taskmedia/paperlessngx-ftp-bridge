@@ -1,0 +1,7 @@
+apiVersion: v2
+name: plngxftpbridge
+description: A Helm chart to upload files to from a FTP (TLS) server to paperless-ngx
+
+type: application
+
+version: 0.1.0
