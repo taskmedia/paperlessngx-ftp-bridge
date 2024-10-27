@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/jlaffaye/ftp"
@@ -24,8 +26,10 @@ func main() {
 		log.Fatalf("One or more required environment variables are missing")
 	}
 
-	// Connect to FTP server
-	conn, err := ftp.Dial(ftpServer)
+	// Establish FTP connection with explicit SSL/TLS
+	conn, err := ftp.Dial(ftpServer, ftp.DialWithTimeout(5*time.Second), ftp.DialWithTLS(&tls.Config{
+		InsecureSkipVerify: true,
+	}))
 	if err != nil {
 		log.Fatalf("Failed to connect to FTP server: %v", err)
 	}
