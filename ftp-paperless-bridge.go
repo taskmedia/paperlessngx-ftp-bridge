@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// Read configuration from environment variables
-	ftpServer := os.Getenv("FTP_SERVER")
+	ftpHost := os.Getenv("FTP_HOST")
 	ftpUser := os.Getenv("FTP_USER")
 	ftpPassword := os.Getenv("FTP_PASSWORD")
 	paperlessUrl := os.Getenv("PAPERLESS_URL")
@@ -22,12 +22,12 @@ func main() {
 	paperlessPassword := os.Getenv("PAPERLESS_PASSWORD")
 	paperlessApiUrl := paperlessUrl + "/api/documents/post_document/"
 
-	if ftpServer == "" || ftpUser == "" || ftpPassword == "" || paperlessUrl == "" || paperlessUser == "" || paperlessPassword == "" {
+	if ftpHost == "" || ftpUser == "" || ftpPassword == "" || paperlessUrl == "" || paperlessUser == "" || paperlessPassword == "" {
 		log.Fatalf("One or more required environment variables are missing")
 	}
 
 	// Establish FTP connection with explicit SSL/TLS
-	conn, err := ftp.Dial(ftpServer, ftp.DialWithTimeout(5*time.Second), ftp.DialWithExplicitTLS(&tls.Config{
+	conn, err := ftp.Dial(ftpHost, ftp.DialWithTimeout(5*time.Second), ftp.DialWithExplicitTLS(&tls.Config{
 		InsecureSkipVerify: true,
 	}))
 	if err != nil {
