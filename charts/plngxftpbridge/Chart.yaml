@@ -1,6 +1,19 @@
 apiVersion: v2
-name: plngxftpbridge
+name: paperless-ngx-ftp-bridge
 description: A Helm chart to upload files to from a FTP (TLS) server to paperless-ngx
+home: https://helm.task.media/paperlessngx-ftp-bridge
+keywords:
+- paperless-ngx
+- ftp
+- upload
+- api
+maintainers:
+- name: fty4
+  url: https://github.com/fty4
+sources:
+- https://github.com/taskmedia/helm_paperlessngx-ftp-bridge
+- https://github.com/taskmedia/helm
+icon: https://media.task.media/images/logo.png
 
 type: application
 
