@@ -15,14 +15,14 @@ import (
 func main() {
 	// Read configuration from environment variables
 	ftpHost := os.Getenv("FTP_HOST")
-	ftpUser := os.Getenv("FTP_USER")
+	ftpUsername := os.Getenv("FTP_USERNAME")
 	ftpPassword := os.Getenv("FTP_PASSWORD")
 	paperlessUrl := os.Getenv("PAPERLESS_URL")
 	paperlessUser := os.Getenv("PAPERLESS_USER")
 	paperlessPassword := os.Getenv("PAPERLESS_PASSWORD")
 	paperlessApiUrl := paperlessUrl + "/api/documents/post_document/"
 
-	if ftpHost == "" || ftpUser == "" || ftpPassword == "" || paperlessUrl == "" || paperlessUser == "" || paperlessPassword == "" {
+	if ftpHost == "" || ftpUsername == "" || ftpPassword == "" || paperlessUrl == "" || paperlessUser == "" || paperlessPassword == "" {
 		log.Fatalf("One or more required environment variables are missing")
 	}
 
@@ -36,7 +36,7 @@ func main() {
 	defer conn.Quit()
 
 	// Login to FTP server
-	err = conn.Login(ftpUser, ftpPassword)
+	err = conn.Login(ftpUsername, ftpPassword)
 	if err != nil {
 		log.Fatalf("Failed to login to FTP server: %v", err)
 	}
