@@ -1,23 +1,56 @@
-name: Build image
-
+name: Release
 on:
-  workflow_dispatch:
-
-env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: taskmedia/paperless-ftp-bridge
-
+  release:
+    types: [published]
 jobs:
-  build:
+  version-bump:
     runs-on: ubuntu-latest
+    if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: bump release version (Chart.yaml)
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: yq -i ".version = \"$(echo ${TAG_NAME:1})\"" charts/paperlessngx-ftp-bridge/Chart.yaml
+
+      - name: commit version bump
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: main
+          commit_message: "chore(release): update version to ${{ github.event.release.tag_name }}"
+          commit_options: "--no-verify"
+          file_pattern: charts/paperlessngx-ftp-bridge/Chart.yaml
+
+      - name: move release tag
+        shell: bash
+        run: |
+          git tag --force ${{ github.event.release.tag_name }} HEAD
+          git push --force origin ${{ github.event.release.tag_name }}
+
+      - name: update latest tag
+        shell: bash
+        run: |
+          git tag --force latest HEAD
+          git push --force origin latest
+
+  build-image:
+    runs-on: ubuntu-latest
+    if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
     permissions:
       contents: read
       packages: write
       # This is used to complete the identity challenge
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
+    env:
+      # Use docker.io for Docker Hub if empty
+      REGISTRY: ghcr.io
+      # github.repository as <account>/<repo>
+      IMAGE_NAME: taskmedia/paperless-ftp-bridge
 
     steps:
       - name: Checkout repository
@@ -101,3 +134,50 @@ jobs:
           package-type: "container"
           min-versions-to-keep: 100
           delete-only-untagged-versions: "true"
+
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release binary
+        run: |
+          helm package charts/paperlessngx-ftp-bridge --destination release/
+
+      - name: login ghcr registry
+        run: echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u taskmedia --password-stdin
+
+      - name: push Helm chart to ghcr
+        run: helm push ./release/*tgz oci://ghcr.io/taskmedia
+
+      - name: Update Index
+        env:
+          GH_PAGES_URL: github.com/taskmedia/helm
+          REPO_NAME: paperlessngx-ftp-bridge
+          HELM_URL: https://helm.task.media/
+        run: |
+          rm -rf ./gh-pages.zip
+          rm -rf ./repo
+          curl -sSLO https://${GH_PAGES_URL}/archive/gh-pages.zip
+          unzip -o ./gh-pages.zip -d ./repo/
+          mv -f ./repo/helm-gh-pages/* ./repo
+          rm -rf ./repo/helm-gh-pages/
+          mkdir -p ./repo/${REPO_NAME} || true
+          cp ./release/*tgz ./repo/${REPO_NAME}/
+          cp ./README.md ./repo/${REPO_NAME}/index.md
+          helm repo index --merge ./repo/index.yaml --url ${HELM_URL} ./repo
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.6.8
+        with:
+          repository-name: taskmedia/helm
+          branch: gh-pages
+          ssh-key: ${{ secrets.DEPLOY_KEY_BLOG }}
+          folder: repo
+          clean: false
