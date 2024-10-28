@@ -34,7 +34,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to FTP server: %v", err)
 	}
-	defer conn.Quit()
+	defer func() {
+		if err := conn.Quit(); err != nil {
+			log.Printf("Failed to close FTP connection: %v", err)
+		}
+	}()
 
 	// Login to FTP server
 	err = conn.Login(ftpUsername, ftpPassword)
