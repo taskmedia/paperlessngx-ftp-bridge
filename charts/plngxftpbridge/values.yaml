@@ -1,0 +1,27 @@
+# schedule to check for new documents every 5 minutes
+cron: "*/5 * * * *"
+
+# ftp configuration where to fetch the documents
+ftp:
+  host: ""
+  user: ""
+  password: ""
+  path: "."
+
+# paperless-ngx configuration to send documents to
+paperless:
+  # host with protocol but no API endpoint
+  host: "http://localhost:8000"
+  username: ""
+  password: ""
+
+# image used for bridge
+image:
+  repository: ghcr.io/taskmedia/paperless-ftp-bridge
+  tag: main
+
+# timeout for the job to complete backup
+activeDeadlineSeconds: 60
+
+# Retain pods for 1 day after job completion
+ttlSecondsAfterFinished: 86400
