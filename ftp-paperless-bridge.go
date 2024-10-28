@@ -17,6 +17,7 @@ func main() {
 	ftpHost := os.Getenv("FTP_HOST")
 	ftpUsername := os.Getenv("FTP_USERNAME")
 	ftpPassword := os.Getenv("FTP_PASSWORD")
+	ftpPath := os.Getenv("FTP_PATH")
 	paperlessUrl := os.Getenv("PAPERLESS_URL")
 	paperlessUser := os.Getenv("PAPERLESS_USER")
 	paperlessPassword := os.Getenv("PAPERLESS_PASSWORD")
@@ -42,7 +43,7 @@ func main() {
 	}
 
 	// List files in the FTP server root directory
-	entries, err := conn.List("/")
+	entries, err := conn.List(ftpPath)
 	if err != nil {
 		log.Fatalf("Failed to list files on FTP server: %v", err)
 	}
