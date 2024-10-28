@@ -38,6 +38,7 @@ jobs:
           git push --force origin latest
 
   build-image:
+    needs: version-bump
     runs-on: ubuntu-latest
     if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
     permissions:
@@ -138,6 +139,7 @@ jobs:
           delete-only-untagged-versions: "true"
 
   build-and-deploy:
+    needs: build-image
     runs-on: ubuntu-latest
     if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
     steps:
