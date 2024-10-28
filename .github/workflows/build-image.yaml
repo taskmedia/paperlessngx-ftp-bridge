@@ -89,10 +89,15 @@ jobs:
         # against the sigstore community Fulcio instance.
         run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign --yes --tlog-upload=false {}@${{ steps.build-and-push.outputs.digest }}
 
+      - name: Get repository name
+        env:
+          REPOSITORY_NAME: ${{ env.IMAGE_NAME }}
+        run: echo "REPOSITORY_NAME=${REPOSITORY_NAME#*/}" >> $GITHUB_ENV
+
       # Clean up legacy images from ghcr.io
       - uses: actions/delete-package-versions@v5
         with:
-          package-name: ${{ env.IMAGE_NAME }}
+          package-name: ${{ env.REPOSITORY_NAME }}
           package-type: "container"
           min-versions-to-keep: 100
           delete-only-untagged-versions: "true"
