@@ -71,7 +71,11 @@ func main() {
 		}
 
 		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp)
+		_, err = buf.ReadFrom(resp)
+		if err != nil {
+			log.Printf("Failed to read file %s: %v", entry.Name, err)
+			continue
+		}
 		resp.Close()
 
 		// Upload the file to the Paperless-ngx API
