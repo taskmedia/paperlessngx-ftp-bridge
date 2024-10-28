@@ -104,8 +104,10 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.tags }}
             ghcr.io/taskmedia/paperless-ftp-bridge:latest
+            ghcr.io/taskmedia/paperless-ftp-bridge:${{ github.event.release.tag_name }}
             fty4/paperless-ftp-bridge:main
             fty4/paperless-ftp-bridge:latest
+            fty4/paperless-ftp-bridge:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
