@@ -17,7 +17,6 @@ spec:
           labels:
             app: "{{ include "plngxftpbridge.fullname" . }}"
         spec:
-          serviceAccountName: {{ include "plngxftpbridge.fullname" . }}
           containers:
             - name: backup
               image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.Version }}"
