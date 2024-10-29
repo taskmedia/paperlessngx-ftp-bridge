@@ -22,13 +22,13 @@ type Config struct {
 	paperlessUser     string
 	paperlessPassword string
 	paperlessApiURL   string
-	intervalSeconds   int
+	interval          time.Duration
 }
 
 func main() {
 	config := loadConfig()
 
-	ticker := time.NewTicker(time.Duration(config.intervalSeconds) * time.Second)
+	ticker := time.NewTicker(config.interval)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -128,13 +128,14 @@ func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 
 func loadConfig() Config {
 	intervalStr := os.Getenv("INTERVAL_SECONDS")
-	interval := 300 // Default to 5 minutes
+	interval := 5 * time.Minute
 	if intervalStr != "" {
 		var err error
-		interval, err = strconv.Atoi(intervalStr)
+		intervalInt, err := strconv.Atoi(intervalStr)
 		if err != nil {
 			log.Fatalf("Invalid INTERVAL_SECONDS value: %v", err)
 		}
+		interval = time.Duration(intervalInt) * time.Second
 	}
 
 	config := Config{
@@ -146,7 +147,7 @@ func loadConfig() Config {
 		paperlessUser:     os.Getenv("PAPERLESS_USER"),
 		paperlessPassword: os.Getenv("PAPERLESS_PASSWORD"),
 		paperlessApiURL:   os.Getenv("PAPERLESS_URL") + "/api/documents/post_document/",
-		intervalSeconds:   interval,
+		interval:          interval,
 	}
 
 	if config.ftpHost == "" || config.ftpUsername == "" || config.ftpPassword == "" || config.paperlessURL == "" || config.paperlessUser == "" || config.paperlessPassword == "" {
