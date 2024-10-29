@@ -1,5 +1,5 @@
 apiVersion: v2
-name: paperless-ngx-ftp-bridge
+name: paperlessngx-ftp-bridge
 description: A Helm chart to upload files to from a FTP (TLS) server to paperless-ngx
 home: https://helm.task.media/paperlessngx-ftp-bridge
 keywords:

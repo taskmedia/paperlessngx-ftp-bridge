@@ -51,7 +51,7 @@ jobs:
       # Use docker.io for Docker Hub if empty
       REGISTRY: ghcr.io
       # github.repository as <account>/<repo>
-      IMAGE_NAME: taskmedia/paperless-ftp-bridge
+      IMAGE_NAME: taskmedia/paperlessngx-ftp-bridge-image
 
     steps:
       - name: Checkout repository
@@ -106,11 +106,11 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ghcr.io/taskmedia/paperless-ftp-bridge:latest
-            ghcr.io/taskmedia/paperless-ftp-bridge:${{ github.event.release.tag_name }}
-            fty4/paperless-ftp-bridge:main
-            fty4/paperless-ftp-bridge:latest
-            fty4/paperless-ftp-bridge:${{ github.event.release.tag_name }}
+            ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:latest
+            ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:${{ github.event.release.tag_name }}
+            fty4/paperlessngx-ftp-bridge-image:main
+            fty4/paperlessngx-ftp-bridge-image:latest
+            fty4/paperlessngx-ftp-bridge-image:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -140,7 +140,7 @@ jobs:
           min-versions-to-keep: 100
           delete-only-untagged-versions: "true"
 
-  build-and-deploy:
+  helm-build-and-deploy:
     needs: build-image
     runs-on: ubuntu-latest
     if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
