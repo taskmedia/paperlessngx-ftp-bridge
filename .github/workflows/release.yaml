@@ -137,7 +137,7 @@ jobs:
         with:
           package-name: ${{ env.REPOSITORY_NAME }}
           package-type: "container"
-          min-versions-to-keep: 100
+          min-versions-to-keep: 200
           delete-only-untagged-versions: "true"
 
   helm-build-and-deploy:
