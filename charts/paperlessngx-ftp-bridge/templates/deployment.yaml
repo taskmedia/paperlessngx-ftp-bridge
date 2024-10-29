@@ -46,4 +46,4 @@ spec:
                 secretKeyRef:
                   name: {{ include "plngxftpbridge.fullname" . }}
                   key: paperless-password
-      restartPolicy: OnFailure
+      restartPolicy: Always
