@@ -1,5 +1,5 @@
 # schedule to check for new documents every 5 minutes
-cron: "*/5 * * * *"
+interval: 300
 
 # ftp configuration where to fetch the documents
 ftp:
