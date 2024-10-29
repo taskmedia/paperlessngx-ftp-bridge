@@ -1,3 +1,4 @@
+# ghcr.io/taskmedia/paperlessngx-ftp-bridge-image
 FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./

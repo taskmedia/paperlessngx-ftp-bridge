@@ -17,8 +17,8 @@ paperless:
 
 # image used for bridge
 image:
-  repository: ghcr.io/taskmedia/paperless-ftp-bridge
-  tag: main
+  repository: ghcr.io/taskmedia/paperlessngx-ftp-bridge-image
+  tag: ""
 
 # timeout for the job to complete backup
 activeDeadlineSeconds: 60
