@@ -1,44 +1,47 @@
-apiVersion: batch/v1
-kind: CronJob
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: "{{ include "plngxftpbridge.fullname" . }}"
+  labels:
+    {{- include "plngxftpbridge.labels" . | nindent 4 }}
 spec:
-  schedule: "{{ .Values.cron }}"
-  successfulJobsHistoryLimit: 2
-  failedJobsHistoryLimit: 2
-  jobTemplate:
+  selector:
+    matchLabels:
+      {{- include "plngxftpbridge.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plngxftpbridge.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
-      backoffLimit: 2
-      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
-      ttlSecondsAfterFinished: {{ .Values.ttlSecondsAfterFinished }}
-      template:
-        metadata:
-          name: "{{ include "plngxftpbridge.fullname" . }}"
-          labels:
-            app: "{{ include "plngxftpbridge.fullname" . }}"
-        spec:
-          containers:
-            - name: backup
-              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.Version) }}"
-              env:
-                - name: FTP_HOST
-                  value: "{{ .Values.ftp.host }}"
-                - name: FTP_USERNAME
-                  value: "{{ .Values.ftp.user }}"
-                - name: FTP_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "plngxftpbridge.fullname" . }}
-                      key: ftp-password
-                - name: FTP_PATH
-                  value: "{{ .Values.ftp.path }}"
-                - name: PAPERLESS_URL
-                  value: "{{ .Values.paperless.url }}"
-                - name: PAPERLESS_USER
-                  value: "{{ .Values.paperless.username }}"
-                - name: PAPERLESS_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ include "plngxftpbridge.fullname" . }}
-                      key: paperless-password
-          restartPolicy: OnFailure
+      containers:
+        - name: backup
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.Version) }}"
+          env:
+            - name: FTP_HOST
+              value: "{{ .Values.ftp.host }}"
+            - name: FTP_USERNAME
+              value: "{{ .Values.ftp.user }}"
+            - name: FTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "plngxftpbridge.fullname" . }}
+                  key: ftp-password
+            - name: FTP_PATH
+              value: "{{ .Values.ftp.path }}"
+            - name: PAPERLESS_URL
+              value: "{{ .Values.paperless.url }}"
+            - name: PAPERLESS_USER
+              value: "{{ .Values.paperless.username }}"
+            - name: PAPERLESS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "plngxftpbridge.fullname" . }}
+                  key: paperless-password
+      restartPolicy: OnFailure
