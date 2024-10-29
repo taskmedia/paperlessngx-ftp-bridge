@@ -6,31 +6,44 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/jlaffaye/ftp"
 )
 
+type Config struct {
+	ftpHost           string
+	ftpUsername       string
+	ftpPassword       string
+	ftpPath           string
+	paperlessURL      string
+	paperlessUser     string
+	paperlessPassword string
+	paperlessApiURL   string
+	intervalSeconds   int
+}
+
 func main() {
-	// Read configuration from environment variables
-	ftpHost := os.Getenv("FTP_HOST")
-	ftpUsername := os.Getenv("FTP_USERNAME")
-	ftpPassword := os.Getenv("FTP_PASSWORD")
-	ftpPath := os.Getenv("FTP_PATH")
-	paperlessUrl := os.Getenv("PAPERLESS_URL")
-	paperlessUser := os.Getenv("PAPERLESS_USER")
-	paperlessPassword := os.Getenv("PAPERLESS_PASSWORD")
-	paperlessApiUrl := paperlessUrl + "/api/documents/post_document/"
+	config := loadConfig()
 
-	if ftpHost == "" || ftpUsername == "" || ftpPassword == "" || paperlessUrl == "" || paperlessUser == "" || paperlessPassword == "" {
-		log.Fatalf("One or more required environment variables are missing")
+	ticker := time.NewTicker(time.Duration(config.intervalSeconds) * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		handle(config)
 	}
+}
 
+func handle(config Config) {
 	// Establish FTP connection with explicit SSL/TLS
-	conn, err := ftp.Dial(ftpHost, ftp.DialWithTimeout(5*time.Second), ftp.DialWithExplicitTLS(&tls.Config{
-		InsecureSkipVerify: true,
-	}))
+	conn, err := ftp.Dial(
+		config.ftpHost,
+		ftp.DialWithTimeout(5*time.Second),
+		ftp.DialWithExplicitTLS(&tls.Config{
+			InsecureSkipVerify: true,
+		}))
 	if err != nil {
 		log.Fatalf("Failed to connect to FTP server: %v", err)
 	}
@@ -41,13 +54,13 @@ func main() {
 	}()
 
 	// Login to FTP server
-	err = conn.Login(ftpUsername, ftpPassword)
+	err = conn.Login(config.ftpUsername, config.ftpPassword)
 	if err != nil {
 		log.Fatalf("Failed to login to FTP server: %v", err)
 	}
 
 	// List files in the FTP server root directory
-	entries, err := conn.List(ftpPath)
+	entries, err := conn.List(config.ftpPath)
 	if err != nil {
 		log.Fatalf("Failed to list files on FTP server: %v", err)
 	}
@@ -80,9 +93,9 @@ func main() {
 
 		// Upload the file to the Paperless-ngx API
 		apiResp, err := client.R().
-			SetBasicAuth(paperlessUser, paperlessPassword).
+			SetBasicAuth(config.paperlessUser, config.paperlessPassword).
 			SetFileReader("document", entry.Name, buf).
-			Post(paperlessApiUrl)
+			Post(config.paperlessApiURL)
 
 		if err != nil {
 			log.Printf("Failed to upload file %s to API: %v", entry.Name, err)
@@ -107,4 +120,34 @@ func main() {
 	}
 
 	log.Println("All files processed. Exiting.")
+}
+
+func loadConfig() Config {
+	intervalStr := os.Getenv("INTERVAL_SECONDS")
+	interval := 300 // Default to 5 minutes
+	if intervalStr != "" {
+		var err error
+		interval, err = strconv.Atoi(intervalStr)
+		if err != nil {
+			log.Fatalf("Invalid INTERVAL_SECONDS value: %v", err)
+		}
+	}
+
+	config := Config{
+		ftpHost:           os.Getenv("FTP_HOST"),
+		ftpUsername:       os.Getenv("FTP_USERNAME"),
+		ftpPassword:       os.Getenv("FTP_PASSWORD"),
+		ftpPath:           os.Getenv("FTP_PATH"),
+		paperlessURL:      os.Getenv("PAPERLESS_URL"),
+		paperlessUser:     os.Getenv("PAPERLESS_USER"),
+		paperlessPassword: os.Getenv("PAPERLESS_PASSWORD"),
+		paperlessApiURL:   os.Getenv("PAPERLESS_URL") + "/api/documents/post_document/",
+		intervalSeconds:   interval,
+	}
+
+	if config.ftpHost == "" || config.ftpUsername == "" || config.ftpPassword == "" || config.paperlessURL == "" || config.paperlessUser == "" || config.paperlessPassword == "" {
+		log.Fatalf("One or more required environment variables are missing")
+	}
+
+	return config
 }
