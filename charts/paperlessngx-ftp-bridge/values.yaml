@@ -20,12 +20,6 @@ image:
   repository: ghcr.io/taskmedia/paperlessngx-ftp-bridge-image
   tag: ""
 
-# timeout for the job to complete backup
-activeDeadlineSeconds: 60
-
-# Retain pods for 1 day after job completion
-ttlSecondsAfterFinished: 86400
-
 # This is for setting Kubernetes Annotations to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
 podAnnotations: {}
