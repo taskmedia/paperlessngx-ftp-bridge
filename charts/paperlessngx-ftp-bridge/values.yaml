@@ -3,6 +3,7 @@ interval: 300
 
 # ftp configuration where to fetch the documents
 ftp:
+  # e.g. ftp.example.org:21
   host: ""
   user: ""
   password: ""
