@@ -31,7 +31,7 @@ func main() {
 	ticker := time.NewTicker(config.interval)
 	defer ticker.Stop()
 
-	for range ticker.C {
+	for ; true; <-ticker.C {
 		handle(config)
 	}
 }
