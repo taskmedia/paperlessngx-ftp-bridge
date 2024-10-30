@@ -11,7 +11,7 @@ ftp:
 # paperless-ngx configuration to send documents to
 paperless:
   # url with protocol but no API endpoint
-  url: "http://localhost:8000"
+  url: "http://paperless-ngx:8000"
   username: ""
   password: ""
 
