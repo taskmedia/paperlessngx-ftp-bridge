@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
-	"log"
+	log "log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -27,7 +27,7 @@ type Config struct {
 
 func main() {
 	config := loadConfig()
-	log.Println("Starting FTP-Paperless bridge...")
+	log.Info("Starting FTP-Paperless bridge...")
 
 	ticker := time.NewTicker(config.interval)
 	defer ticker.Stop()
@@ -38,6 +38,8 @@ func main() {
 }
 
 func handle(config Config) {
+	log.Debug("Starting file processing...")
+
 	// Establish FTP connection with explicit SSL/TLS
 	conn, err := ftp.Dial(
 		config.ftpHost,
@@ -46,26 +48,26 @@ func handle(config Config) {
 			InsecureSkipVerify: true,
 		}))
 	if err != nil {
-		log.Printf("Failed to connect to FTP server: %v\n", err)
+		log.Warn("Failed to connect to FTP server: %v\n", err)
 		return
 	}
 	defer func() {
 		if err := conn.Quit(); err != nil {
-			log.Printf("Failed to close FTP connection: %v\n", err)
+			log.Warn("Failed to close FTP connection: %v\n", err)
 		}
 	}()
 
 	// Login to FTP server
 	err = conn.Login(config.ftpUsername, config.ftpPassword)
 	if err != nil {
-		log.Printf("Failed to login to FTP server: %v\n", err)
+		log.Warn("Failed to login to FTP server: %v\n", err)
 		return
 	}
 
 	// List files in the FTP server root directory
 	entries, err := conn.List(config.ftpPath)
 	if err != nil {
-		log.Printf("Failed to list files on FTP server: %v\n", err)
+		log.Warn("Failed to list files on FTP server: %v\n", err)
 		return
 	}
 
@@ -74,27 +76,27 @@ func handle(config Config) {
 		processFile(conn, entry, config)
 	}
 
-	log.Println("All files processed. Exiting.")
+	log.Debug("All files processed. Exiting.")
 }
 
 func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 	if entry.Type != ftp.EntryTypeFile || filepath.Ext(entry.Name) != ".pdf" {
-		log.Printf("Skipping file: %s", entry.Name)
+		log.Debug("Skipping file", "fileName", entry.Name)
 		return
 	}
-	log.Printf("Detected PDF file: %s", entry.Name)
+	log.Debug("Detected PDF file", "fileName", entry.Name)
 
 	// Download the file from FTP server
 	resp, err := conn.Retr(entry.Name)
 	if err != nil {
-		log.Printf("Failed to retrieve file %s: %v", entry.Name, err)
+		log.Warn("Failed to retrieve file %s: %v", entry.Name, err)
 		return
 	}
 
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(resp)
 	if err != nil {
-		log.Printf("Failed to read file %s: %v", entry.Name, err)
+		log.Warn("Failed to read file %s: %v", entry.Name, err)
 		return
 	}
 	resp.Close()
@@ -109,25 +111,25 @@ func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 		Post(config.paperlessApiURL)
 
 	if err != nil {
-		log.Printf("Failed to upload file %s to API: %v", entry.Name, err)
+		log.Warn("Failed to upload file %s to API: %v", entry.Name, err)
 		return
 	}
 
 	if apiResp.IsError() {
-		log.Printf("API returned an error for file %s: %s", entry.Name, apiResp.Status())
+		log.Warn("API returned an error for file %s: %s", entry.Name, apiResp.Status())
 		return
 	}
-
-	log.Printf("Successfully uploaded file %s to API", entry.Name)
+	log.Debug("Successfully uploaded file to API", "fileName", entry.Name)
 
 	// Delete the file from FTP server
 	err = conn.Delete(entry.Name)
 	if err != nil {
-		log.Printf("Failed to delete file %s from FTP server: %v", entry.Name, err)
+		log.Error("Failed to delete file %s from FTP server: %v", entry.Name, err)
 		return
 	}
+	log.Debug("Successfully deleted file from FTP server", "fileName", entry.Name)
 
-	log.Printf("Successfully deleted file %s from FTP server", entry.Name)
+	log.Info("Successfully processed file", "fileName", entry.Name)
 }
 
 func loadConfig() Config {
@@ -137,7 +139,8 @@ func loadConfig() Config {
 		var err error
 		intervalInt, err := strconv.Atoi(intervalStr)
 		if err != nil {
-			log.Fatalf("Invalid INTERVAL_SECONDS value: %v", err)
+			log.Error("Invalid INTERVAL_SECONDS value: %v", err)
+			os.Exit(1)
 		}
 		interval = time.Duration(intervalInt) * time.Second
 	}
@@ -155,7 +158,8 @@ func loadConfig() Config {
 	}
 
 	if config.ftpHost == "" || config.ftpUsername == "" || config.ftpPassword == "" || config.paperlessURL == "" || config.paperlessUser == "" || config.paperlessPassword == "" {
-		log.Fatalf("One or more required environment variables are missing")
+		log.Error("One or more required environment variables are missing")
+		os.Exit(1)
 	}
 
 	return config
