@@ -1,4 +1,4 @@
-module github.com/taskmedia/helm_paperlessngx-ftp-bridge
+module github.com/taskmedia/paperlessngx-ftp-bridge
 
 go 1.23.1
 
