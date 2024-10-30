@@ -45,24 +45,27 @@ func handle(config Config) {
 			InsecureSkipVerify: true,
 		}))
 	if err != nil {
-		log.Fatalf("Failed to connect to FTP server: %v", err)
+		log.Printf("Failed to connect to FTP server: %v\n", err)
+		return
 	}
 	defer func() {
 		if err := conn.Quit(); err != nil {
-			log.Printf("Failed to close FTP connection: %v", err)
+			log.Printf("Failed to close FTP connection: %v\n", err)
 		}
 	}()
 
 	// Login to FTP server
 	err = conn.Login(config.ftpUsername, config.ftpPassword)
 	if err != nil {
-		log.Fatalf("Failed to login to FTP server: %v", err)
+		log.Printf("Failed to login to FTP server: %v\n", err)
+		return
 	}
 
 	// List files in the FTP server root directory
 	entries, err := conn.List(config.ftpPath)
 	if err != nil {
-		log.Fatalf("Failed to list files on FTP server: %v", err)
+		log.Printf("Failed to list files on FTP server: %v\n", err)
+		return
 	}
 
 	// Iterate over the files and process .pdf files
