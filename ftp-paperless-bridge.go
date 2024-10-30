@@ -27,6 +27,7 @@ type Config struct {
 
 func main() {
 	config := loadConfig()
+	log.Println("Starting FTP-Paperless bridge...")
 
 	ticker := time.NewTicker(config.interval)
 	defer ticker.Stop()
