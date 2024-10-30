@@ -5,7 +5,7 @@ on:
 jobs:
   version-bump:
     runs-on: ubuntu-latest
-    if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
   build-image:
     needs: version-bump
     runs-on: ubuntu-latest
-    if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
     permissions:
       contents: read
       packages: write
@@ -143,7 +143,7 @@ jobs:
   helm-build-and-deploy:
     needs: build-image
     runs-on: ubuntu-latest
-    if: github.repository == 'taskmedia/helm_paperlessngx-ftp-bridge'
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
