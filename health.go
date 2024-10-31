@@ -66,6 +66,13 @@ func readinessProbe(config Config) bool {
 	}
 	defer conn.Quit()
 
+	// Attempt to log in to the FTP server
+	err = conn.Login(config.ftpUsername, config.ftpPassword)
+	if err != nil {
+		log.Error("Failed to login to FTP server during readiness probe", "error", err)
+		return false
+	}
+
 	// Check Paperless server
 	client := resty.New()
 	resp, err := client.R().Get(config.paperlessURL)
