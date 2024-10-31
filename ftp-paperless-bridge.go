@@ -92,14 +92,14 @@ func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 	// Download the file from FTP server
 	resp, err := conn.Retr(entry.Name)
 	if err != nil {
-		log.Warn("Failed to retrieve file %s: %v", entry.Name, err)
+		log.Warn("Failed to retrieve file", "fileName", entry.Name, "error", err)
 		return
 	}
 
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(resp)
 	if err != nil {
-		log.Warn("Failed to read file %s: %v", entry.Name, err)
+		log.Warn("Failed to read file", "fileName", entry.Name, "error", err)
 		return
 	}
 	resp.Close()
@@ -114,12 +114,12 @@ func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 		Post(config.paperlessApiURL)
 
 	if err != nil {
-		log.Warn("Failed to upload file %s to API: %v", entry.Name, err)
+		log.Warn("Failed to upload file to API", "fileName", entry.Name, "error", err)
 		return
 	}
 
 	if apiResp.IsError() {
-		log.Warn("API returned an error for file %s: %s", entry.Name, apiResp.Status())
+		log.Warn("API returned an error for file", "fileName", entry.Name, "status", apiResp.Status())
 		return
 	}
 	log.Debug("Successfully uploaded file to API", "fileName", entry.Name)
@@ -127,7 +127,7 @@ func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 	// Delete the file from FTP server
 	err = conn.Delete(entry.Name)
 	if err != nil {
-		log.Error("Failed to delete file %s from FTP server: %v", entry.Name, err)
+		log.Error("Failed to delete file from FTP server", "fileName", entry.Name, "error", err)
 		return
 	}
 	log.Debug("Successfully deleted file from FTP server", "fileName", entry.Name)
