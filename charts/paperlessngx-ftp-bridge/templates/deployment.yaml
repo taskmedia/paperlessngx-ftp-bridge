@@ -48,4 +48,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "plngxftpbridge.fullname" . }}
                   key: paperless-password
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: {{ .Values.interval }}
       restartPolicy: Always
