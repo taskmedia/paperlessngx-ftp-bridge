@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	log "log/slog"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -12,11 +13,23 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
+const (
+	// Percentage limit for the number of false results to determine health status
+	unhealthyPercentage = 0.5
+)
+
 var (
 	lastResults      = make([]bool, 10)
 	lastResultsIndex = 0
 	lastResultsMutex sync.Mutex
 )
+
+func init() {
+	// start with last results all true to avoid false health check
+	for i := range lastResults {
+		lastResults[i] = true
+	}
+}
 
 func startHealthCheckServer() {
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -72,10 +85,14 @@ func isHealthy() bool {
 	lastResultsMutex.Lock()
 	defer lastResultsMutex.Unlock()
 
+	falseCount := 0
 	for _, result := range lastResults {
 		if !result {
-			return false
+			falseCount++
 		}
 	}
-	return true
+
+	threshold := int(math.Floor(float64(len(lastResults)) * unhealthyPercentage))
+
+	return falseCount <= threshold
 }
