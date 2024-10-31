@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -26,8 +27,10 @@ type Config struct {
 }
 
 func main() {
-	config := loadConfig()
+	setLogLevel()
+
 	log.Info("Starting FTP-Paperless bridge...")
+	config := loadConfig()
 
 	ticker := time.NewTicker(config.interval)
 	defer ticker.Stop()
@@ -163,4 +166,25 @@ func loadConfig() Config {
 	}
 
 	return config
+}
+
+func setLogLevel() {
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "ERROR"
+	}
+	logLevel = strings.ToUpper(logLevel)
+
+	switch logLevel {
+	case "DEBUG":
+		log.SetLogLoggerLevel(log.LevelDebug)
+	case "INFO":
+		log.SetLogLoggerLevel(log.LevelInfo)
+	case "WARN":
+		log.SetLogLoggerLevel(log.LevelWarn)
+	case "ERROR":
+		log.SetLogLoggerLevel(log.LevelError)
+	default:
+		log.SetLogLoggerLevel(log.LevelInfo)
+	}
 }
