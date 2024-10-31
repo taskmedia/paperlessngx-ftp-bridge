@@ -51,26 +51,26 @@ func handle(config Config) {
 			InsecureSkipVerify: true,
 		}))
 	if err != nil {
-		log.Warn("Failed to connect to FTP server: %v\n", err)
+		log.Warn("Failed to connect to FTP server", "error", err)
 		return
 	}
 	defer func() {
 		if err := conn.Quit(); err != nil {
-			log.Warn("Failed to close FTP connection: %v\n", err)
+			log.Warn("Failed to close FTP connection", "error", err)
 		}
 	}()
 
 	// Login to FTP server
 	err = conn.Login(config.ftpUsername, config.ftpPassword)
 	if err != nil {
-		log.Warn("Failed to login to FTP server: %v\n", err)
+		log.Warn("Failed to login to FTP server", "error", err)
 		return
 	}
 
 	// List files in the FTP server root directory
 	entries, err := conn.List(config.ftpPath)
 	if err != nil {
-		log.Warn("Failed to list files on FTP server: %v\n", err)
+		log.Warn("Failed to list files on FTP server", "error", err)
 		return
 	}
 
@@ -142,7 +142,7 @@ func loadConfig() Config {
 		var err error
 		intervalInt, err := strconv.Atoi(intervalStr)
 		if err != nil {
-			log.Error("Invalid INTERVAL_SECONDS value: %v", err)
+			log.Error("Invalid INTERVAL_SECONDS value", "error", err)
 			os.Exit(1)
 		}
 		interval = time.Duration(intervalInt) * time.Second
