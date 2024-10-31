@@ -32,6 +32,12 @@ func main() {
 	log.Info("Starting FTP-Paperless bridge...")
 	config := loadConfig()
 
+	// check readiness
+	if !readinessProbe(config) {
+		log.Error("Initial readiness probe failed")
+		os.Exit(1)
+	}
+
 	ticker := time.NewTicker(config.interval)
 	defer ticker.Stop()
 
