@@ -32,6 +32,9 @@ func main() {
 	log.Info("Starting FTP-Paperless bridge...")
 	config := loadConfig()
 
+	// Start health check server
+	go startHealthCheckServer()
+
 	// check readiness
 	if !readinessProbe(config) {
 		log.Error("Initial readiness probe failed")
@@ -42,7 +45,8 @@ func main() {
 	defer ticker.Stop()
 
 	for ; true; <-ticker.C {
-		handle(config)
+		success := handle(config)
+		updateLastResults(success)
 	}
 }
 
