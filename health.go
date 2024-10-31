@@ -36,15 +36,17 @@ func init() {
 func startHealthCheckServer() {
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if isHealthy() {
+			log.Debug("Health check passed")
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintln(w, "OK")
 		} else {
+			log.Warn("Health check failed")
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, "NOT OK")
 		}
 	})
 
-	log.Info("Starting health check server on :8080")
+	log.Info("Starting health check server on :8080/healthz")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Error("Failed to start health check server", "error", err)
 	}
