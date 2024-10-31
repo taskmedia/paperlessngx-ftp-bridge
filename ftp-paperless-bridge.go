@@ -40,7 +40,7 @@ func main() {
 	}
 }
 
-func handle(config Config) {
+func handle(config Config) bool {
 	log.Debug("Starting file processing...")
 
 	// Establish FTP connection with explicit SSL/TLS
@@ -52,7 +52,7 @@ func handle(config Config) {
 		}))
 	if err != nil {
 		log.Warn("Failed to connect to FTP server", "error", err)
-		return
+		return false
 	}
 	defer func() {
 		if err := conn.Quit(); err != nil {
@@ -64,14 +64,14 @@ func handle(config Config) {
 	err = conn.Login(config.ftpUsername, config.ftpPassword)
 	if err != nil {
 		log.Warn("Failed to login to FTP server", "error", err)
-		return
+		return false
 	}
 
 	// List files in the FTP server root directory
 	entries, err := conn.List(config.ftpPath)
 	if err != nil {
 		log.Warn("Failed to list files on FTP server", "error", err)
-		return
+		return false
 	}
 
 	// Iterate over the files and process .pdf files
@@ -80,6 +80,7 @@ func handle(config Config) {
 	}
 
 	log.Debug("All files processed. Exiting.")
+	return true
 }
 
 func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
