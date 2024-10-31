@@ -24,6 +24,8 @@ spec:
         - name: backup
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.Version) }}"
           env:
+            - name: LOG_LEVEL
+              value: "{{ .Values.logLevel }}"
             - name: INTERVAL_SECONDS
               value: "{{ .Values.interval }}"
             - name: FTP_HOST
