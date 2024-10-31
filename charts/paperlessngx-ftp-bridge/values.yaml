@@ -1,3 +1,6 @@
+# logLevel for the bridge - DEBUG, INFO, WARNING, ERROR
+logLevel: INFO
+
 # schedule to check for new documents every 5 minutes
 interval: 300
 
