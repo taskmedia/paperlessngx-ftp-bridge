@@ -14,14 +14,16 @@ import (
 )
 
 const (
-	// Percentage limit for the number of false results to determine health status
+	// allowed percentage of unhealthy results in last n results
 	unhealthyPercentage = 0.5
+	evaluatedResults    = 10
 )
 
 var (
-	lastResults      = make([]bool, 10)
+	lastResults      = make([]bool, evaluatedResults)
 	lastResultsIndex = 0
 	lastResultsMutex sync.Mutex
+	threshold        = int(math.Floor(float64(evaluatedResults) * unhealthyPercentage))
 )
 
 func init() {
@@ -78,7 +80,7 @@ func updateLastResults(success bool) {
 	defer lastResultsMutex.Unlock()
 
 	lastResults[lastResultsIndex] = success
-	lastResultsIndex = (lastResultsIndex + 1) % len(lastResults)
+	lastResultsIndex = (lastResultsIndex + 1) % evaluatedResults
 }
 
 func isHealthy() bool {
@@ -91,8 +93,6 @@ func isHealthy() bool {
 			falseCount++
 		}
 	}
-
-	threshold := int(math.Floor(float64(len(lastResults)) * unhealthyPercentage))
 
 	return falseCount <= threshold
 }
