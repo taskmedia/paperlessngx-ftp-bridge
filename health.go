@@ -75,8 +75,10 @@ func readinessProbe(config Config) bool {
 
 	// Check Paperless server
 	client := resty.New()
-	resp, err := client.R().Get(config.paperlessURL)
-	if err != nil || resp.IsError() {
+	resp, err := client.R().
+		SetBasicAuth(config.paperlessUser, config.paperlessPassword).
+		Get(config.paperlessApiURL)
+	if err != nil || (resp.StatusCode() != 405 && resp.IsError()) {
 		log.Error("Failed to connect to Paperless server during readiness probe", "error", err)
 		return false
 	}
