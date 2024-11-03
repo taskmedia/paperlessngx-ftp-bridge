@@ -64,11 +64,7 @@ func handle(config Config) bool {
 		log.Warn("Failed to connect to FTP server", "error", err)
 		return false
 	}
-	defer func() {
-		if err := conn.Quit(); err != nil {
-			log.Warn("Failed to close FTP connection", "error", err)
-		}
-	}()
+	defer quitFTPConnection(conn)
 
 	// Login to FTP server
 	err = conn.Login(config.ftpUsername, config.ftpPassword)
@@ -197,5 +193,11 @@ func setLogLevel() {
 		log.SetLogLoggerLevel(log.LevelError)
 	default:
 		log.SetLogLoggerLevel(log.LevelInfo)
+	}
+}
+
+func quitFTPConnection(conn *ftp.ServerConn) {
+	if err := conn.Quit(); err != nil {
+		log.Warn("Failed to close FTP connection", "error", err)
 	}
 }

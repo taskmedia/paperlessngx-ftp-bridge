@@ -64,7 +64,7 @@ func readinessProbe(config Config) bool {
 		log.Error("Failed to connect to FTP server during readiness probe", "error", err)
 		return false
 	}
-	defer conn.Quit()
+	defer quitFTPConnection(conn)
 
 	// Attempt to log in to the FTP server
 	err = conn.Login(config.ftpUsername, config.ftpPassword)
