@@ -189,3 +189,45 @@ jobs:
           ssh-key: ${{ secrets.DEPLOY_KEY_BLOG }}
           folder: repo
           clean: false
+
+  build-binaries:
+    name: Build binaries for release
+    needs: version-bump
+    runs-on: ubuntu-latest
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Build binaries
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o ./bin/paperlessngx-ftp-bridge-linux-amd64
+          GOOS=linux GOARCH=arm64 go build -o ./bin/paperlessngx-ftp-bridge-linux-arm64
+          GOOS=linux GOARCH=arm go build -o ./bin/paperlessngx-ftp-bridge-linux-arm
+          GOOS=linux GOARCH=386 go build -o ./bin/paperlessngx-ftp-bridge-linux-386
+
+          # macOS with Intel CPU
+          GOOS=darwin GOARCH=amd64 go build -o ./bin/paperlessngx-ftp-bridge-darwin-amd64
+          # macOS with Apple Silicon CPU
+          GOOS=darwin GOARCH=arm64 go build -o ./bin/paperlessngx-ftp-bridge-darwin-arm64
+
+          GOOS=windows GOARCH=amd64 go build -o ./bin/paperlessngx-ftp-bridge-windows-amd64.exe
+          GOOS=windows GOARCH=386 go build -o ./bin/paperlessngx-ftp-bridge-windows-386.exe
+
+      - name: Upload artifacts to existing release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            ./bin/paperlessngx-ftp-bridge-linux-amd64
+            ./bin/paperlessngx-ftp-bridge-linux-arm64
+            ./bin/paperlessngx-ftp-bridge-linux-arm
+            ./bin/paperlessngx-ftp-bridge-linux-386
+            ./bin/paperlessngx-ftp-bridge-darwin-amd64
+            ./bin/paperlessngx-ftp-bridge-darwin-arm64
+            ./bin/paperlessngx-ftp-bridge-windows-amd64.exe
+            ./bin/paperlessngx-ftp-bridge-windows-386.exe
