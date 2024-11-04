@@ -21,7 +21,7 @@ spec:
         {{- end }}
     spec:
       containers:
-        - name: backup
+        - name: bridge
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.Version) }}"
           env:
             - name: LOG_LEVEL
