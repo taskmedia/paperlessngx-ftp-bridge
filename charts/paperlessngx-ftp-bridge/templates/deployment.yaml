@@ -23,6 +23,7 @@ spec:
       containers:
         - name: bridge
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.Version) }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: LOG_LEVEL
               value: "{{ .Values.logLevel }}"
