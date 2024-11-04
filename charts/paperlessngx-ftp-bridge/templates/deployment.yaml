@@ -29,9 +29,9 @@ spec:
             - name: INTERVAL_SECONDS
               value: "{{ .Values.interval }}"
             - name: FTP_HOST
-              value: "{{ .Values.ftp.host }}"
+              value: "{{ required "ftp.host is required" .Values.ftp.host }}"
             - name: FTP_USERNAME
-              value: "{{ .Values.ftp.user }}"
+              value: "{{ required "ftp.user is required" .Values.ftp.user }}"
             - name: FTP_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -42,7 +42,7 @@ spec:
             - name: PAPERLESS_URL
               value: "{{ .Values.paperless.url }}"
             - name: PAPERLESS_USER
-              value: "{{ .Values.paperless.username }}"
+              value: "{{ required "paperless.username is required" .Values.paperless.username }}"
             - name: PAPERLESS_PASSWORD
               valueFrom:
                 secretKeyRef:
