@@ -26,7 +26,7 @@ spec:
           env:
             - name: LOG_LEVEL
               value: "{{ .Values.logLevel }}"
-            - name: INTERVAL_SECONDS
+            - name: CRON_SCHEDULE
               value: "{{ .Values.interval }}"
             - name: FTP_HOST
               value: "{{ .Values.ftp.host }}"
@@ -53,5 +53,5 @@ spec:
               path: /healthz
               port: 8080
             initialDelaySeconds: 30
-            periodSeconds: {{ .Values.interval }}
+            periodSeconds: 30
       restartPolicy: Always

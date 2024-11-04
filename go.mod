@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	github.com/go-resty/resty/v2 v2.15.3
 	github.com/jlaffaye/ftp v0.2.0
+	github.com/robfig/cron/v3 v3.0.1
 )
 
 require (

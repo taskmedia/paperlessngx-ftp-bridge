@@ -2,7 +2,7 @@
 logLevel: INFO
 
 # schedule to check for new documents every 5 minutes
-interval: 300
+interval: "*/5 * * * *"
 
 # ftp configuration where to fetch the documents
 ftp:
