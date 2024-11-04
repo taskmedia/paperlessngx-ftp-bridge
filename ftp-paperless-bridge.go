@@ -6,12 +6,12 @@ import (
 	log "log/slog"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/jlaffaye/ftp"
+	"github.com/robfig/cron/v3"
 )
 
 type Config struct {
@@ -23,7 +23,7 @@ type Config struct {
 	paperlessUser     string
 	paperlessPassword string
 	paperlessApiURL   string
-	interval          time.Duration
+	interval          string
 }
 
 func main() {
@@ -41,13 +41,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	ticker := time.NewTicker(config.interval)
-	defer ticker.Stop()
+	c := cron.New()
 
-	for ; true; <-ticker.C {
+	_, err := c.AddFunc(config.interval, func() {
 		success := handle(config)
 		updateLastResults(success)
+	})
+	if err != nil {
+		log.Error("Failed to schedule job", "error", err)
+		os.Exit(1)
 	}
+
+	c.Start()
+
+	// Run the first job immediately
+	success := handle(config)
+	updateLastResults(success)
+
+	// Wait forever
+	select {}
 }
 
 func handle(config Config) bool {
@@ -143,16 +155,9 @@ func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 }
 
 func loadConfig() Config {
-	intervalStr := os.Getenv("INTERVAL_SECONDS")
-	interval := 5 * time.Minute
-	if intervalStr != "" {
-		var err error
-		intervalInt, err := strconv.Atoi(intervalStr)
-		if err != nil {
-			log.Error("Invalid INTERVAL_SECONDS value", "error", err)
-			os.Exit(1)
-		}
-		interval = time.Duration(intervalInt) * time.Second
+	interval := os.Getenv("CRON_SCHEDULE")
+	if interval == "" {
+		interval = "*/5 7-20 * * *" // Default to every 5 minutes from 7 AM to 8 PM
 	}
 
 	config := Config{
