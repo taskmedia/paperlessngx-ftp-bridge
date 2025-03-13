@@ -9,7 +9,12 @@ ftp:
   # e.g. ftp.example.org:21
   host: ""
   user: ""
+  # password for ftp connection
   password: ""
+  # passwordExistingSecret is used to reference an existing secret in the same namespace
+  passwordExistingSecret:
+    name: ""
+    key: ""
   path: "."
 
 # paperless-ngx configuration to send documents to
@@ -17,7 +22,12 @@ paperless:
   # url with protocol but no API endpoint
   url: "http://paperless-ngx:8000"
   username: ""
+  # password for paperless-ngx
   password: ""
+  # passwordExistingSecret is used to reference an existing secret in the same namespace
+  passwordExistingSecret:
+    name: ""
+    key: ""
 
 # image used for bridge
 image:
