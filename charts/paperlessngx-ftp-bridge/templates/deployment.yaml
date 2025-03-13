@@ -37,8 +37,8 @@ spec:
             - name: FTP_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "plngxftpbridge.fullname" . }}
-                  key: ftp-password
+                  name: {{ default (include "plngxftpbridge.fullname" .) .Values.ftp.passwordExistingSecret.name }}
+                  key: {{ default "ftp-password" .Values.ftp.passwordExistingSecret.key }}
             - name: FTP_PATH
               value: "{{ .Values.ftp.path }}"
             - name: PAPERLESS_URL
@@ -48,8 +48,8 @@ spec:
             - name: PAPERLESS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "plngxftpbridge.fullname" . }}
-                  key: paperless-password
+                  name: {{ default (include "plngxftpbridge.fullname" .) .Values.paperless.passwordExistingSecret.name }}
+                  key: {{ default "paperless-password" .Values.paperless.passwordExistingSecret.key }}
           livenessProbe:
             httpGet:
               path: /healthz
