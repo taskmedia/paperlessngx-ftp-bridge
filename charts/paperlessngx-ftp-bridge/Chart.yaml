@@ -15,4 +15,4 @@ sources:
   - https://github.com/taskmedia/helm
 icon: https://media.task.media/images/logo.png
 type: application
-version: 1.1.0
+version: 1.2.0
