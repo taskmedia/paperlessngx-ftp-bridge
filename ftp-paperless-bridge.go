@@ -121,7 +121,9 @@ func processFile(conn *ftp.ServerConn, entry *ftp.Entry, config Config) {
 		log.Warn("Failed to read file", "fileName", entry.Name, "error", err)
 		return
 	}
-	resp.Close()
+	if err := resp.Close(); err != nil {
+		log.Warn("Failed to close FTP retrieve response", "error", err)
+	}
 
 	// Create a Resty client
 	client := resty.New()

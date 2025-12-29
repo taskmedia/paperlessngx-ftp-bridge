@@ -38,11 +38,15 @@ func startHealthCheckServer() {
 		if isHealthy() {
 			log.Debug("Health check passed")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, "OK")
+			if _, err := fmt.Fprintln(w, "OK"); err != nil {
+				log.Warn("Failed to write health response", "error", err)
+			}
 		} else {
 			log.Warn("Health check failed")
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, "NOT OK")
+			if _, err := fmt.Fprintln(w, "NOT OK"); err != nil {
+				log.Warn("Failed to write health response", "error", err)
+			}
 		}
 	})
 
