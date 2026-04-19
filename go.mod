@@ -12,4 +12,5 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 )
