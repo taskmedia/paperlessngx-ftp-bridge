@@ -38,11 +38,11 @@ func startHealthCheckServer() {
 		if isHealthy() {
 			log.Debug("Health check passed")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintln(w, "OK")
+			_, _ = fmt.Fprintln(w, "OK")
 		} else {
 			log.Warn("Health check failed")
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintln(w, "NOT OK")
+			_, _ = fmt.Fprintln(w, "NOT OK")
 		}
 	})
 
