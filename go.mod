@@ -1,17 +1,14 @@
 module github.com/taskmedia/paperlessngx-ftp-bridge
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/jlaffaye/ftp v0.2.0
+	github.com/jlaffaye/ftp v0.2.1
 	github.com/robfig/cron/v3 v3.0.1
 )
 
 require (
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 )
