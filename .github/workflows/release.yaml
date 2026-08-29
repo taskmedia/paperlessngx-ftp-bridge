@@ -150,7 +150,7 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name }}
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
