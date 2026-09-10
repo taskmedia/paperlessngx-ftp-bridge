@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/jlaffaye/ftp v0.2.1
+	github.com/jlaffaye/ftp v0.2.4
 	github.com/robfig/cron/v3 v3.0.1
 )
 
