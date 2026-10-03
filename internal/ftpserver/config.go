@@ -35,6 +35,17 @@ type Config struct {
 	// Defaults to DefaultAllowedExtensions.
 	AllowedExtensions []string
 
+	// PublicHost is used as the self-signed TLS certificate's SAN. A
+	// follow-on ticket also advertises it as the PASV public host.
+	// Defaults to "localhost".
+	PublicHost string
+
+	// TLSCertDir is checked for an existing tls.crt/tls.key pair (the
+	// kubernetes.io/tls Secret shape) to offer for AUTH TLS instead of the
+	// self-signed default. Defaults to DefaultTLSCertDir. Presence of a
+	// readable pair is the only toggle; there is no separate enable flag.
+	TLSCertDir string
+
 	// Uploader receives the bytes of every accepted upload.
 	Uploader Uploader
 }
@@ -53,4 +64,20 @@ func (c Config) allowedExtensions() []string {
 	}
 
 	return c.AllowedExtensions
+}
+
+func (c Config) publicHost() string {
+	if c.PublicHost == "" {
+		return "localhost"
+	}
+
+	return c.PublicHost
+}
+
+func (c Config) tlsCertDir() string {
+	if c.TLSCertDir == "" {
+		return DefaultTLSCertDir
+	}
+
+	return c.TLSCertDir
 }
