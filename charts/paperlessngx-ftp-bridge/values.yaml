@@ -1,21 +1,35 @@
 # logLevel for the bridge - DEBUG, INFO, WARNING, ERROR
 logLevel: INFO
 
-# schedule to check for new documents every 5 minutes
-interval: "*/5 * * * *"
-
-# ftp configuration where to fetch the documents
+# ftp configuration for the embedded FTP/FTPS server scanners connect to
+# directly (see ADR-0001/0002/0003 for the design behind this schema)
 ftp:
-  # e.g. ftp.example.org:21
-  host: ""
-  user: ""
-  # password for ftp connection
-  password: ""
-  # passwordExistingSecret is used to reference an existing secret in the same namespace
-  passwordExistingSecret:
-    name: ""
-    key: ""
-  path: "."
+  # accounts accepted by the embedded FTP server. Usernames must be
+  # env-var-safe (letters, digits, underscore only) -- the chart fails to
+  # render otherwise. Add a second scanner by appending another entry; no
+  # code change is required.
+  accounts:
+    - username: ""
+      # password for this FTP account
+      password: ""
+      # passwordExistingSecret is used to reference an existing secret in the same namespace
+      passwordExistingSecret:
+        name: ""
+        key: ""
+
+  # file extensions accepted by STOR, including the leading dot
+  allowedExtensions:
+    - ".pdf"
+
+  # passive-mode (PASV) data connection configuration
+  pasv:
+    # port range advertised for passive data connections
+    portMin: 50000
+    portMax: 50019
+    # publicHost is the IP/host advertised to clients for PASV data
+    # connections. Required for scanners behind NAT to reach the data
+    # channel -- there is no default or auto-inference.
+    publicHost: ""
 
 # paperless-ngx configuration to send documents to
 paperless:

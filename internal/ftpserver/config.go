@@ -16,29 +16,40 @@ type Uploader interface {
 	Upload(filename string, data []byte) error
 }
 
-// Config holds the minimal settings needed to construct the embedded FTP
-// server. Account and PASV-range configuration is intentionally minimal here
-// pending a dedicated ticket to widen it to a multi-account, Helm-driven
-// schema.
+// Account is one FTP username/password pair accepted by the server.
+type Account struct {
+	Username string
+	Password string
+}
+
+// Config holds the settings needed to construct the embedded FTP server.
 type Config struct {
 	// ListenAddr is the control-channel listen address, e.g. ":2121".
 	// Defaults to DefaultListenAddr.
 	ListenAddr string
 
-	// Username and Password authenticate the single FTP account accepted by
-	// the server.
-	Username string
-	Password string
+	// Accounts lists the FTP username/password pairs accepted by the
+	// server. Adding a second or third account is a pure append — no code
+	// change is required.
+	Accounts []Account
 
 	// AllowedExtensions lists the file extensions (including the leading
 	// dot, e.g. ".pdf") accepted by STOR. Matching is case-insensitive.
 	// Defaults to DefaultAllowedExtensions.
 	AllowedExtensions []string
 
-	// PublicHost is used as the self-signed TLS certificate's SAN. A
-	// follow-on ticket also advertises it as the PASV public host.
-	// Defaults to "localhost".
+	// PublicHost is the IP/host advertised to clients for PASV data
+	// connections and used as the self-signed TLS certificate's SAN.
+	// Required for passive mode to work behind NAT; there is no default or
+	// auto-inference for PASV, but defaults to "localhost" for the TLS SAN
+	// when left empty.
 	PublicHost string
+
+	// PASVPortMin and PASVPortMax bound the port range advertised for
+	// passive data connections. When either is zero, passive connections
+	// use ephemeral ports instead.
+	PASVPortMin int
+	PASVPortMax int
 
 	// TLSCertDir is checked for an existing tls.crt/tls.key pair (the
 	// kubernetes.io/tls Secret shape) to offer for AUTH TLS instead of the

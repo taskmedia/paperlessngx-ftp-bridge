@@ -12,9 +12,7 @@ import (
 // username/password don't match the configured account.
 var errInvalidCredentials = errors.New("ftpserver: invalid username or password")
 
-// mainDriver implements ftpserverlib.MainDriver. Account configuration is
-// intentionally minimal (a single username/password pair); it is widened by
-// a follow-on ticket.
+// mainDriver implements ftpserverlib.MainDriver.
 type mainDriver struct {
 	cfg  Config
 	cert *tlsCertSource
@@ -35,13 +33,23 @@ func newMainDriver(cfg Config) (*mainDriver, error) {
 }
 
 // GetSettings returns the embedded server's settings. PassiveTransferPortRange
-// is left unset so passive data connections use ephemeral ports, matching
-// the minimal/placeholder PASV configuration for this ticket.
+// is left unset (ephemeral ports) unless both Config.PASVPortMin and
+// Config.PASVPortMax are configured.
 func (d *mainDriver) GetSettings() (*ftpserverlib.Settings, error) {
-	return &ftpserverlib.Settings{
+	settings := &ftpserverlib.Settings{
 		ListenAddr:          d.cfg.listenAddr(),
 		DefaultTransferType: ftpserverlib.TransferTypeBinary,
-	}, nil
+		PublicHost:          d.cfg.PublicHost,
+	}
+
+	if d.cfg.PASVPortMin > 0 && d.cfg.PASVPortMax > 0 {
+		settings.PassiveTransferPortRange = &ftpserverlib.PortRange{
+			Start: d.cfg.PASVPortMin,
+			End:   d.cfg.PASVPortMax,
+		}
+	}
+
+	return settings, nil
 }
 
 // ClientConnected sends the welcome message for a newly connected client.
@@ -53,14 +61,18 @@ func (d *mainDriver) ClientConnected(_ ftpserverlib.ClientContext) (string, erro
 // ClientDriver returned by AuthUser and is garbage collected once dropped.
 func (d *mainDriver) ClientDisconnected(_ ftpserverlib.ClientContext) {}
 
-// AuthUser authenticates against the single configured account and, on
-// success, returns a ClientDriver backed by a fresh in-memory filesystem.
+// AuthUser authenticates against however many accounts are configured and,
+// on success, returns a ClientDriver backed by a fresh in-memory
+// filesystem. Adding an account to Config.Accounts needs no code change
+// here.
 func (d *mainDriver) AuthUser(_ ftpserverlib.ClientContext, user, pass string) (ftpserverlib.ClientDriver, error) {
-	if user != d.cfg.Username || pass != d.cfg.Password {
-		return nil, errInvalidCredentials
+	for _, account := range d.cfg.Accounts {
+		if account.Username == user && account.Password == pass {
+			return newClientDriver(d.cfg.Uploader, d.cfg.allowedExtensions()), nil
+		}
 	}
 
-	return newClientDriver(d.cfg.Uploader, d.cfg.allowedExtensions()), nil
+	return nil, errInvalidCredentials
 }
 
 // GetTLSConfig returns the certificate to offer for AUTH TLS: either the
