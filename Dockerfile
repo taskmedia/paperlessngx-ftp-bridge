@@ -1,11 +1,21 @@
 # ghcr.io/taskmedia/paperlessngx-ftp-bridge-image
-FROM golang:1.27-alpine AS builder
+#
+# The builder always runs on the build host's native platform (BUILDPLATFORM)
+# and cross-compiles for the requested target via GOOS/GOARCH. This avoids
+# running the Go toolchain itself under QEMU emulation for non-native target
+# platforms, which is by far the slowest part of a multi-platform build.
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 COPY *.go .
 COPY internal ./internal
-RUN go build -o ftp-paperless-bridge .
+ARG TARGETOS
+ARG TARGETARCH
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o ftp-paperless-bridge .
 
 FROM scratch
 
