@@ -3,7 +3,9 @@ package main
 import (
 	log "log/slog"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/taskmedia/paperlessngx-ftp-bridge/internal/ftpserver"
 	"github.com/taskmedia/paperlessngx-ftp-bridge/internal/paperless"
@@ -14,14 +16,15 @@ import (
 // allowed-extension configuration is intentionally minimal here; a
 // follow-on ticket widens it to a multi-account, Helm-driven schema.
 type Config struct {
-	ftpListenAddr        string
-	ftpUsername          string
-	ftpPassword          string
-	ftpAllowedExtensions []string
-	ftpPublicHost        string
-	paperlessURL         string
-	paperlessUser        string
-	paperlessPassword    string
+	ftpListenAddr          string
+	ftpUsername            string
+	ftpPassword            string
+	ftpAllowedExtensions   []string
+	ftpPublicHost          string
+	paperlessURL           string
+	paperlessUser          string
+	paperlessPassword      string
+	paperlessCheckInterval time.Duration
 }
 
 func main() {
@@ -29,9 +32,6 @@ func main() {
 
 	log.Info("Starting FTP-Paperless bridge...")
 	config := loadConfig()
-
-	// Start health check server
-	go startHealthCheckServer()
 
 	paperlessClient := paperless.NewClient(config.paperlessURL, config.paperlessUser, config.paperlessPassword)
 
@@ -48,6 +48,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	checker := newReadinessChecker(srv, paperlessClient, config.paperlessCheckInterval)
+	go checker.run()
+	go startHealthCheckServer(checker)
+
 	log.Info("Starting embedded FTP server...")
 	if err := srv.ListenAndServe(); err != nil {
 		log.Error("FTP server stopped", "error", err)
@@ -62,14 +66,15 @@ func loadConfig() Config {
 	}
 
 	config := Config{
-		ftpListenAddr:        os.Getenv("FTP_LISTEN_ADDR"),
-		ftpUsername:          os.Getenv("FTP_USERNAME"),
-		ftpPassword:          os.Getenv("FTP_PASSWORD"),
-		ftpAllowedExtensions: allowedExtensions,
-		ftpPublicHost:        os.Getenv("FTP_PASV_PUBLIC_HOST"),
-		paperlessURL:         os.Getenv("PAPERLESS_URL"),
-		paperlessUser:        os.Getenv("PAPERLESS_USER"),
-		paperlessPassword:    os.Getenv("PAPERLESS_PASSWORD"),
+		ftpListenAddr:          os.Getenv("FTP_LISTEN_ADDR"),
+		ftpUsername:            os.Getenv("FTP_USERNAME"),
+		ftpPassword:            os.Getenv("FTP_PASSWORD"),
+		ftpAllowedExtensions:   allowedExtensions,
+		ftpPublicHost:          os.Getenv("FTP_PASV_PUBLIC_HOST"),
+		paperlessURL:           os.Getenv("PAPERLESS_URL"),
+		paperlessUser:          os.Getenv("PAPERLESS_USER"),
+		paperlessPassword:      os.Getenv("PAPERLESS_PASSWORD"),
+		paperlessCheckInterval: paperlessCheckInterval(),
 	}
 
 	if config.ftpUsername == "" || config.ftpPassword == "" || config.paperlessURL == "" || config.paperlessUser == "" || config.paperlessPassword == "" {
@@ -78,6 +83,24 @@ func loadConfig() Config {
 	}
 
 	return config
+}
+
+// paperlessCheckInterval reads PAPERLESS_CHECK_INTERVAL_SECONDS, falling
+// back to DefaultPaperlessCheckInterval when unset or invalid.
+func paperlessCheckInterval() time.Duration {
+	raw := os.Getenv("PAPERLESS_CHECK_INTERVAL_SECONDS")
+	if raw == "" {
+		return DefaultPaperlessCheckInterval
+	}
+
+	seconds, err := strconv.Atoi(raw)
+	if err != nil || seconds <= 0 {
+		log.Warn("Invalid PAPERLESS_CHECK_INTERVAL_SECONDS, using default", "value", raw, "default", DefaultPaperlessCheckInterval)
+
+		return DefaultPaperlessCheckInterval
+	}
+
+	return time.Duration(seconds) * time.Second
 }
 
 func setLogLevel() {

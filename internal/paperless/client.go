@@ -11,6 +11,7 @@ import (
 
 // Client uploads documents to a paperless-ngx instance via its REST API.
 type Client struct {
+	baseURL  string
 	apiURL   string
 	username string
 	password string
@@ -21,6 +22,7 @@ type Client struct {
 // "<baseURL>/api/documents/post_document/" using HTTP basic auth.
 func NewClient(baseURL, username, password string) *Client {
 	return &Client{
+		baseURL:  baseURL,
 		apiURL:   baseURL + "/api/documents/post_document/",
 		username: username,
 		password: password,
@@ -42,6 +44,18 @@ func (c *Client) Upload(filename string, data []byte) error {
 
 	if resp.IsError() {
 		return fmt.Errorf("paperless-ngx rejected document %q: %s", filename, resp.Status())
+	}
+
+	return nil
+}
+
+// Ping checks whether paperless-ngx is reachable. Any HTTP response -- even
+// a non-2xx one, e.g. an auth failure -- counts as reachable: the point is
+// to detect a network-level outage (DNS failure, connection refused,
+// timeout), not to validate credentials.
+func (c *Client) Ping() error {
+	if _, err := c.http.R().Get(c.baseURL); err != nil {
+		return fmt.Errorf("checking paperless-ngx reachability: %w", err)
 	}
 
 	return nil
