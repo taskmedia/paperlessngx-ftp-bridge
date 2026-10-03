@@ -31,6 +31,25 @@ ftp:
     # channel -- there is no default or auto-inference.
     publicHost: ""
 
+  # TLS certificate for explicit FTPS (AUTH TLS), always offered alongside
+  # plain FTP (see ADR-0003). Leave existingSecret.name empty to use the
+  # self-signed certificate generated in memory at startup.
+  tls:
+    existingSecret:
+      # name of an existing kubernetes.io/tls Secret (tls.crt/tls.key) in
+      # this release's namespace. When set, it is mounted read-only at the
+      # fixed path /etc/ftp/tls; when empty, no volume is created at all.
+      name: ""
+
+# service configures the single LoadBalancer Service that carries both the
+# FTP control port and the full PASV range (see ADR-0006). service.type is
+# hardcoded to LoadBalancer in the template, not a value here.
+service:
+  # loadBalancerIP pins a stable external IP -- set this to match
+  # ftp.pasv.publicHost on platforms that don't assign one automatically.
+  loadBalancerIP: ""
+  annotations: {}
+
 # paperless-ngx configuration to send documents to
 paperless:
   # url with protocol but no API endpoint

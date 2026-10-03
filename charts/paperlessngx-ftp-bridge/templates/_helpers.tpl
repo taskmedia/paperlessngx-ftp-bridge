@@ -51,6 +51,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+The individual PASV ports (ftp.pasv.portMin..portMax inclusive) shared by
+the Service and Deployment templates, since Kubernetes can't express a port
+range (see ADR-0006). Usage: {{- range $port := include "plngxftpbridge.pasvPorts" . | splitList " " }}
+*/}}
+{{- define "plngxftpbridge.pasvPorts" -}}
+{{- $ports := untilStep (int .Values.ftp.pasv.portMin) (int (add1 .Values.ftp.pasv.portMax)) 1 }}
+{{- join " " $ports }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "plngxftpbridge.serviceAccountName" -}}

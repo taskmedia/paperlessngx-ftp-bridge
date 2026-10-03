@@ -5,6 +5,9 @@ metadata:
   labels:
     {{- include "plngxftpbridge.labels" . | nindent 4 }}
 spec:
+  # Hardcoded, not a .Values knob: PASV session affinity can't survive more
+  # than one replica behind an L4 passthrough LoadBalancer (see ADR-0006).
+  replicas: 1
   selector:
     matchLabels:
       {{- include "plngxftpbridge.selectorLabels" . | nindent 6 }}
@@ -25,6 +28,29 @@ spec:
         - name: bridge
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.Version) }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Fully locked down: nothing in the request path touches a real
+          # filesystem (in-memory ClientDriver, in-memory or read-only
+          # mounted TLS certs -- see ADR-0001/0003/0006).
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: ftp-control
+              containerPort: 2121
+              protocol: TCP
+            {{- range $port := include "plngxftpbridge.pasvPorts" . | splitList " " }}
+            - name: ftp-pasv-{{ $port }}
+              containerPort: {{ $port }}
+              protocol: TCP
+            {{- end }}
           env:
             - name: LOG_LEVEL
               value: "{{ .Values.logLevel }}"
@@ -63,4 +89,22 @@ spec:
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          {{- with .Values.ftp.tls.existingSecret.name }}
+          volumeMounts:
+            - name: ftp-tls
+              mountPath: /etc/ftp/tls
+              readOnly: true
+          {{- end }}
+      {{- with .Values.ftp.tls.existingSecret.name }}
+      volumes:
+        - name: ftp-tls
+          secret:
+            secretName: {{ . }}
+      {{- end }}
       restartPolicy: Always
