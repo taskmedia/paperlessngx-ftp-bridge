@@ -3,21 +3,30 @@ package main
 import (
 	log "log/slog"
 	"os"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/taskmedia/paperlessngx-ftp-bridge/internal/ftpserver"
 	"github.com/taskmedia/paperlessngx-ftp-bridge/internal/paperless"
 )
 
+// ftpAccountEnvPrefix is the env var prefix an operator's Helm-rendered FTP
+// account is delivered under, e.g. FTP_ACCOUNT_SCANNER1=some-password. The
+// chart validates the username portion is env-var-safe (letters, digits,
+// underscore) before rendering it, so no further sanitization happens here:
+// the username is recoverable directly from the var name.
+const ftpAccountEnvPrefix = "FTP_ACCOUNT_"
+
 // Config holds the environment-derived settings for the embedded FTP
-// server and the paperless-ngx client it uploads to. Account and
-// allowed-extension configuration is intentionally minimal here; a
-// follow-on ticket widens it to a multi-account, Helm-driven schema.
+// server and the paperless-ngx client it uploads to.
 type Config struct {
 	ftpListenAddr        string
-	ftpUsername          string
-	ftpPassword          string
+	ftpAccounts          []ftpserver.Account
 	ftpAllowedExtensions []string
+	ftpPublicHost        string
+	ftpPASVPortMin       int
+	ftpPASVPortMax       int
 	paperlessURL         string
 	paperlessUser        string
 	paperlessPassword    string
@@ -36,9 +45,11 @@ func main() {
 
 	srv := ftpserver.NewServer(ftpserver.Config{
 		ListenAddr:        config.ftpListenAddr,
-		Username:          config.ftpUsername,
-		Password:          config.ftpPassword,
+		Accounts:          config.ftpAccounts,
 		AllowedExtensions: config.ftpAllowedExtensions,
+		PublicHost:        config.ftpPublicHost,
+		PASVPortMin:       config.ftpPASVPortMin,
+		PASVPortMax:       config.ftpPASVPortMax,
 		Uploader:          paperlessClient,
 	})
 
@@ -57,20 +68,60 @@ func loadConfig() Config {
 
 	config := Config{
 		ftpListenAddr:        os.Getenv("FTP_LISTEN_ADDR"),
-		ftpUsername:          os.Getenv("FTP_USERNAME"),
-		ftpPassword:          os.Getenv("FTP_PASSWORD"),
+		ftpAccounts:          loadFTPAccounts(os.Environ()),
 		ftpAllowedExtensions: allowedExtensions,
+		ftpPublicHost:        os.Getenv("FTP_PASV_PUBLIC_HOST"),
+		ftpPASVPortMin:       atoiOrZero(os.Getenv("FTP_PASV_PORT_MIN")),
+		ftpPASVPortMax:       atoiOrZero(os.Getenv("FTP_PASV_PORT_MAX")),
 		paperlessURL:         os.Getenv("PAPERLESS_URL"),
 		paperlessUser:        os.Getenv("PAPERLESS_USER"),
 		paperlessPassword:    os.Getenv("PAPERLESS_PASSWORD"),
 	}
 
-	if config.ftpUsername == "" || config.ftpPassword == "" || config.paperlessURL == "" || config.paperlessUser == "" || config.paperlessPassword == "" {
+	if len(config.ftpAccounts) == 0 || config.paperlessURL == "" || config.paperlessUser == "" || config.paperlessPassword == "" {
 		log.Error("One or more required environment variables are missing")
 		os.Exit(1)
 	}
 
 	return config
+}
+
+// loadFTPAccounts extracts one Account per FTP_ACCOUNT_<USERNAME> entry in
+// env (the "NAME=VALUE" shape of os.Environ()), sorted by username for
+// deterministic ordering.
+func loadFTPAccounts(env []string) []ftpserver.Account {
+	var accounts []ftpserver.Account
+
+	for _, entry := range env {
+		name, value, ok := strings.Cut(entry, "=")
+		if !ok || !strings.HasPrefix(name, ftpAccountEnvPrefix) {
+			continue
+		}
+
+		username := strings.TrimPrefix(name, ftpAccountEnvPrefix)
+		if username == "" {
+			continue
+		}
+
+		accounts = append(accounts, ftpserver.Account{Username: username, Password: value})
+	}
+
+	sort.Slice(accounts, func(i, j int) bool { return accounts[i].Username < accounts[j].Username })
+
+	return accounts
+}
+
+func atoiOrZero(raw string) int {
+	if raw == "" {
+		return 0
+	}
+
+	value, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0
+	}
+
+	return value
 }
 
 func setLogLevel() {

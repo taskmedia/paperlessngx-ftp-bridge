@@ -81,7 +81,7 @@ func TestIntegrationAllowedUploadReachesPaperless(t *testing.T) {
 	defer paperlessServer.Close()
 
 	uploader := paperless.NewClient(paperlessServer.URL, "", "")
-	addr := startTestServer(t, Config{Username: "scanner", Password: "secret", Uploader: uploader})
+	addr := startTestServer(t, Config{Accounts: []Account{{Username: "scanner", Password: "secret"}}, Uploader: uploader})
 	client := dialTestClient(t, addr, "scanner", "secret")
 
 	err := client.Store("scan.pdf", bytes.NewReader([]byte("%PDF-1.4 fake pdf bytes")))
@@ -107,7 +107,7 @@ func TestIntegrationDisallowedExtensionRejectedBeforeHTTPCall(t *testing.T) {
 	defer paperlessServer.Close()
 
 	uploader := paperless.NewClient(paperlessServer.URL, "", "")
-	addr := startTestServer(t, Config{Username: "scanner", Password: "secret", Uploader: uploader})
+	addr := startTestServer(t, Config{Accounts: []Account{{Username: "scanner", Password: "secret"}}, Uploader: uploader})
 	client := dialTestClient(t, addr, "scanner", "secret")
 
 	err := client.Store("scan.exe", bytes.NewReader([]byte("not a pdf")))
@@ -127,7 +127,7 @@ func TestIntegrationPaperlessErrorSurfacesAsFTPError(t *testing.T) {
 	defer paperlessServer.Close()
 
 	uploader := paperless.NewClient(paperlessServer.URL, "", "")
-	addr := startTestServer(t, Config{Username: "scanner", Password: "secret", Uploader: uploader})
+	addr := startTestServer(t, Config{Accounts: []Account{{Username: "scanner", Password: "secret"}}, Uploader: uploader})
 	client := dialTestClient(t, addr, "scanner", "secret")
 
 	err := client.Store("scan.pdf", bytes.NewReader([]byte("%PDF-1.4 fake pdf bytes")))

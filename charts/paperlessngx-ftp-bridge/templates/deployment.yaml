@@ -28,19 +28,26 @@ spec:
           env:
             - name: LOG_LEVEL
               value: "{{ .Values.logLevel }}"
-            - name: CRON_SCHEDULE
-              value: "{{ .Values.interval }}"
-            - name: FTP_HOST
-              value: "{{ required "ftp.host is required" .Values.ftp.host }}"
-            - name: FTP_USERNAME
-              value: "{{ required "ftp.user is required" .Values.ftp.user }}"
-            - name: FTP_PASSWORD
+            {{- range $i, $account := .Values.ftp.accounts }}
+            {{- $username := required (printf "ftp.accounts[%d].username is required" $i) $account.username }}
+            {{- if not (regexMatch "^[A-Za-z0-9_]+$" $username) }}
+            {{- fail (printf "ftp.accounts[%d].username %q must contain only letters, digits, and underscores" $i $username) }}
+            {{- end }}
+            {{- $existingSecret := $account.passwordExistingSecret | default dict }}
+            - name: FTP_ACCOUNT_{{ $username }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (include "plngxftpbridge.fullname" .) .Values.ftp.passwordExistingSecret.name }}
-                  key: {{ default "ftp-password" .Values.ftp.passwordExistingSecret.key }}
-            - name: FTP_PATH
-              value: "{{ .Values.ftp.path }}"
+                  name: {{ default (include "plngxftpbridge.fullname" $) $existingSecret.name }}
+                  key: {{ default (printf "ftp-account-%d-password" $i) $existingSecret.key }}
+            {{- end }}
+            - name: FTP_ALLOWED_EXTENSIONS
+              value: "{{ join "," .Values.ftp.allowedExtensions }}"
+            - name: FTP_PASV_PORT_MIN
+              value: "{{ .Values.ftp.pasv.portMin }}"
+            - name: FTP_PASV_PORT_MAX
+              value: "{{ .Values.ftp.pasv.portMax }}"
+            - name: FTP_PASV_PUBLIC_HOST
+              value: "{{ required "ftp.pasv.publicHost is required" .Values.ftp.pasv.publicHost }}"
             - name: PAPERLESS_URL
               value: "{{ .Values.paperless.url }}"
             - name: PAPERLESS_USER
