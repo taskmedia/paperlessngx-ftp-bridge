@@ -4,6 +4,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY *.go .
+COPY internal ./internal
 RUN go build -o ftp-paperless-bridge .
 
 FROM scratch
