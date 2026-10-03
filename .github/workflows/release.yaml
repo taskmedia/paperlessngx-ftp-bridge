@@ -158,6 +158,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: set chart version
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: yq -i ".version = \"$(echo ${TAG_NAME:1})\"" charts/paperlessngx-ftp-bridge/Chart.yaml
+
       - name: Create release binary
         run: |
           helm package charts/paperlessngx-ftp-bridge --destination release/
