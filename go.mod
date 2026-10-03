@@ -1,6 +1,6 @@
 module github.com/taskmedia/paperlessngx-ftp-bridge
 
-go 1.26
+go 1.25.0
 
 require (
 	github.com/drakkan/goftp v0.0.0-20200609142545-aa2de14babf4
