@@ -6,8 +6,11 @@ import (
 )
 
 func TestMainDriverAuthUser(t *testing.T) {
-	cfg := Config{Username: "scanner", Password: "secret", Uploader: &fakeUploader{}}
-	driver := newMainDriver(cfg)
+	cfg := Config{Username: "scanner", Password: "secret", Uploader: &fakeUploader{}, TLSCertDir: t.TempDir()}
+	driver, err := newMainDriver(cfg)
+	if err != nil {
+		t.Fatalf("newMainDriver() error = %v, want nil", err)
+	}
 
 	tests := []struct {
 		desc    string
@@ -42,14 +45,27 @@ func TestMainDriverAuthUser(t *testing.T) {
 	}
 }
 
-func TestMainDriverGetTLSConfigReturnsNil(t *testing.T) {
-	driver := newMainDriver(Config{})
+func TestMainDriverGetTLSConfigOffersSelfSignedCertByDefault(t *testing.T) {
+	driver, err := newMainDriver(Config{TLSCertDir: t.TempDir(), PublicHost: "ftp.example.org"})
+	if err != nil {
+		t.Fatalf("newMainDriver() error = %v, want nil", err)
+	}
 
 	tlsConfig, err := driver.GetTLSConfig()
 	if err != nil {
 		t.Fatalf("GetTLSConfig() error = %v, want nil", err)
 	}
-	if tlsConfig != nil {
-		t.Fatalf("GetTLSConfig() = %v, want nil", tlsConfig)
+	if tlsConfig == nil || len(tlsConfig.Certificates) == 0 {
+		t.Fatalf("GetTLSConfig() = %v, want a config offering a self-signed certificate", tlsConfig)
+	}
+}
+
+func TestNewMainDriverFailsFastOnInvalidExistingCert(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir+"/tls.crt", "not a certificate")
+	writeFile(t, dir+"/tls.key", "not a key")
+
+	if _, err := newMainDriver(Config{TLSCertDir: dir}); err == nil {
+		t.Fatalf("newMainDriver() error = nil, want a fatal error for an invalid TLS secret")
 	}
 }

@@ -3,6 +3,7 @@ package ftpserver
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 
 	ftpserverlib "github.com/fclairamb/ftpserverlib"
 )
@@ -12,14 +13,25 @@ import (
 var errInvalidCredentials = errors.New("ftpserver: invalid username or password")
 
 // mainDriver implements ftpserverlib.MainDriver. Account configuration is
-// intentionally minimal (a single username/password pair) and TLS is not
-// yet offered; both are widened by follow-on tickets.
+// intentionally minimal (a single username/password pair); it is widened by
+// a follow-on ticket.
 type mainDriver struct {
-	cfg Config
+	cfg  Config
+	cert *tlsCertSource
 }
 
-func newMainDriver(cfg Config) *mainDriver {
-	return &mainDriver{cfg: cfg}
+// newMainDriver builds a mainDriver, eagerly constructing (or loading) the
+// TLS certificate it will offer. An operator-supplied cert/key pair that
+// exists but fails to load is returned as an error here, by design, so
+// callers can treat it as a fatal startup error rather than a per-connection
+// one.
+func newMainDriver(cfg Config) (*mainDriver, error) {
+	cert, err := newTLSCertSource(cfg.tlsCertDir(), cfg.publicHost())
+	if err != nil {
+		return nil, fmt.Errorf("preparing TLS certificate: %w", err)
+	}
+
+	return &mainDriver{cfg: cfg, cert: cert}, nil
 }
 
 // GetSettings returns the embedded server's settings. PassiveTransferPortRange
@@ -51,10 +63,17 @@ func (d *mainDriver) AuthUser(_ ftpserverlib.ClientContext, user, pass string) (
 	return newClientDriver(d.cfg.Uploader, d.cfg.allowedExtensions()), nil
 }
 
-// GetTLSConfig returns no TLS configuration: explicit FTPS is added by a
-// follow-on ticket (ADR-0003).
+// GetTLSConfig returns the certificate to offer for AUTH TLS: either the
+// operator-supplied secret mounted at cfg.tlsCertDir(), reloaded whenever it
+// changes on disk, or the self-signed default (ADR-0003). AUTH TLS is always
+// offered this way; there is no enable/disable switch.
 func (d *mainDriver) GetTLSConfig() (*tls.Config, error) {
-	return nil, nil
+	cert, err := d.cert.GetCertificate()
+	if err != nil {
+		return nil, fmt.Errorf("loading TLS certificate: %w", err)
+	}
+
+	return &tls.Config{Certificates: []tls.Certificate{*cert}}, nil
 }
 
 var _ ftpserverlib.MainDriver = (*mainDriver)(nil)

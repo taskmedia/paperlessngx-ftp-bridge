@@ -18,6 +18,7 @@ type Config struct {
 	ftpUsername          string
 	ftpPassword          string
 	ftpAllowedExtensions []string
+	ftpPublicHost        string
 	paperlessURL         string
 	paperlessUser        string
 	paperlessPassword    string
@@ -34,13 +35,18 @@ func main() {
 
 	paperlessClient := paperless.NewClient(config.paperlessURL, config.paperlessUser, config.paperlessPassword)
 
-	srv := ftpserver.NewServer(ftpserver.Config{
+	srv, err := ftpserver.NewServer(ftpserver.Config{
 		ListenAddr:        config.ftpListenAddr,
 		Username:          config.ftpUsername,
 		Password:          config.ftpPassword,
 		AllowedExtensions: config.ftpAllowedExtensions,
+		PublicHost:        config.ftpPublicHost,
 		Uploader:          paperlessClient,
 	})
+	if err != nil {
+		log.Error("Failed to prepare embedded FTP server", "error", err)
+		os.Exit(1)
+	}
 
 	log.Info("Starting embedded FTP server...")
 	if err := srv.ListenAndServe(); err != nil {
@@ -60,6 +66,7 @@ func loadConfig() Config {
 		ftpUsername:          os.Getenv("FTP_USERNAME"),
 		ftpPassword:          os.Getenv("FTP_PASSWORD"),
 		ftpAllowedExtensions: allowedExtensions,
+		ftpPublicHost:        os.Getenv("FTP_PASV_PUBLIC_HOST"),
 		paperlessURL:         os.Getenv("PAPERLESS_URL"),
 		paperlessUser:        os.Getenv("PAPERLESS_USER"),
 		paperlessPassword:    os.Getenv("PAPERLESS_PASSWORD"),
