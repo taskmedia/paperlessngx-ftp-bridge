@@ -83,3 +83,29 @@ func TestClientUpload(t *testing.T) {
 		})
 	}
 }
+
+func TestClientPing(t *testing.T) {
+	t.Run("server reachable, even with a non-2xx response", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer server.Close()
+
+		client := NewClient(server.URL, "someuser", "somepass")
+
+		if err := client.Ping(); err != nil {
+			t.Fatalf("Ping() error = %v, want nil (any HTTP response counts as reachable)", err)
+		}
+	})
+
+	t.Run("server unreachable", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		server.Close() // closed before use: nothing is listening on this address.
+
+		client := NewClient(server.URL, "someuser", "somepass")
+
+		if err := client.Ping(); err == nil {
+			t.Fatalf("Ping() error = nil, want an error for an unreachable server")
+		}
+	})
+}

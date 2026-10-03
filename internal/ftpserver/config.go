@@ -39,8 +39,10 @@ type Config struct {
 	AllowedExtensions []string
 
 	// PublicHost is the IP/host advertised to clients for PASV data
-	// connections. Required for passive mode to work behind NAT; there is
-	// no default or auto-inference.
+	// connections and used as the self-signed TLS certificate's SAN.
+	// Required for passive mode to work behind NAT; there is no default or
+	// auto-inference for PASV, but defaults to "localhost" for the TLS SAN
+	// when left empty.
 	PublicHost string
 
 	// PASVPortMin and PASVPortMax bound the port range advertised for
@@ -48,6 +50,12 @@ type Config struct {
 	// use ephemeral ports instead.
 	PASVPortMin int
 	PASVPortMax int
+
+	// TLSCertDir is checked for an existing tls.crt/tls.key pair (the
+	// kubernetes.io/tls Secret shape) to offer for AUTH TLS instead of the
+	// self-signed default. Defaults to DefaultTLSCertDir. Presence of a
+	// readable pair is the only toggle; there is no separate enable flag.
+	TLSCertDir string
 
 	// Uploader receives the bytes of every accepted upload.
 	Uploader Uploader
@@ -67,4 +75,20 @@ func (c Config) allowedExtensions() []string {
 	}
 
 	return c.AllowedExtensions
+}
+
+func (c Config) publicHost() string {
+	if c.PublicHost == "" {
+		return "localhost"
+	}
+
+	return c.PublicHost
+}
+
+func (c Config) tlsCertDir() string {
+	if c.TLSCertDir == "" {
+		return DefaultTLSCertDir
+	}
+
+	return c.TLSCertDir
 }
