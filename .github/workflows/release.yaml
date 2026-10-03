@@ -170,6 +170,16 @@ jobs:
       - name: login ghcr registry
         run: echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u taskmedia --password-stdin
 
+      - name: ensure chart version is not already published
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${TAG_NAME:1}"
+          if helm pull oci://ghcr.io/taskmedia/paperlessngx-ftp-bridge --version "$VERSION" -d /tmp/chart-version-check >/dev/null 2>&1; then
+            echo "::error::chart version $VERSION is already published at ghcr.io/taskmedia/paperlessngx-ftp-bridge - refusing to overwrite"
+            exit 1
+          fi
+
       - name: push Helm chart to ghcr
         run: helm push ./release/*tgz oci://ghcr.io/taskmedia
 
