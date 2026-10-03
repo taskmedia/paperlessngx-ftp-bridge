@@ -1,71 +1,57 @@
 # Migration notes
 
-Breaking-change upgrade guides for this chart, newest first. Each entry is written once, when the breaking change ships, and referenced from the corresponding GitHub Release notes.
+Breaking-change upgrade guides for this chart, newest first.
 
-## Embedded FTP server (no more external FTP server)
+## v2: embedded FTP server
 
-Spec: [#81](https://github.com/taskmedia/paperlessngx-ftp-bridge/issues/81). Implemented across PRs #88-#93.
+Spec: [#81](https://github.com/taskmedia/paperlessngx-ftp-bridge/issues/81).
 
-### What changed
+### TL;DR
 
-`ftp-paperless-bridge` used to be an FTP *client*: it polled an external FTP server on a schedule, pulled new files, pushed them into paperless-ngx, and deleted them from the server. It is now the FTP *server* itself — scanners connect directly to the bridge (`scanner -> ftp-paperless-bridge -> paperless-ngx`), and every upload is forwarded to paperless-ngx the moment it finishes, with no polling and no external FTP server to run or keep in sync.
+The bridge is now the FTP server itself (`scanner -> ftp-paperless-bridge -> paperless-ngx`) instead of polling an external one. Point your scanner(s) at the chart's Service, rewrite `values.yaml` per the table below, and make sure your cluster can satisfy a `LoadBalancer` Service. No dual-mode flag exists — this is a full replacement.
 
-This is a full replacement, not a dual-mode rollout — there is no flag that keeps the old polling behavior alive.
-
-### Action required
-
-1. **Point your scanner(s) at the bridge directly.** Use the chart's new Service external IP (or `service.loadBalancerIP` if you pinned one) instead of your old external FTP server's address. Explicit FTPS (`AUTH TLS`) is offered automatically; see `ftp.tls.existingSecret.name` below if you want your own certificate instead of the self-signed default.
-2. **Rewrite your `values.yaml`** per the table below — old keys are removed outright, not deprecated-and-ignored. A chart render fails loudly on any new required value left unset.
-3. **Confirm your cluster/platform can satisfy a `LoadBalancer` Service.** The chart now hardcodes `service.type: LoadBalancer` to expose both the FTP control port and the full PASV port range (see "New Kubernetes resources" below).
-4. **Decommission the old external FTP server** once scanners are repointed — the bridge no longer talks to it.
-
-### Removed values / env vars
+### Removed
 
 | Old `values.yaml` key | Old env var | Replacement |
 |---|---|---|
-| `ftp.host` | `FTP_HOST` | none — scanners connect to the chart's own Service instead |
+| `ftp.host` | `FTP_HOST` | none — scanners connect to the chart's own Service |
 | `ftp.user` | `FTP_USERNAME` | `ftp.accounts[].username` |
 | `ftp.password` / `ftp.passwordExistingSecret` | `FTP_PASSWORD` | `ftp.accounts[].password` / `ftp.accounts[].passwordExistingSecret` |
-| `ftp.path` | `FTP_PATH` | none — there is no remote directory to target; uploads are forwarded in-flight |
-| `interval` (top-level) | `CRON_SCHEDULE` | none — there is no poll loop; uploads happen the instant a scanner finishes `STOR` |
+| `ftp.path` | `FTP_PATH` | none — uploads are forwarded in-flight, no remote directory |
+| `interval` (top-level) | `CRON_SCHEDULE` | none — no poll loop, uploads happen on `STOR` |
 
 ### New required values
 
-- `ftp.accounts[0].username` / `ftp.accounts[0].password` (or `passwordExistingSecret`) — at least one FTP account. The chart fails to render with no accounts configured, or with a username containing anything other than letters/digits/underscore.
-- `ftp.pasv.publicHost` — the IP/host advertised to scanners for PASV data connections. No default; required for scanners behind NAT to reach the data channel at all.
-- `paperless.username` / `paperless.password` (or `passwordExistingSecret`) — unchanged in shape, but now also required at render time if left empty.
+- `ftp.accounts[0].username` / `.password` (or `.passwordExistingSecret`) — at least one account; username must be letters/digits/underscore only.
+- `ftp.pasv.publicHost` — IP/host advertised to scanners for PASV data connections. No default.
+- `paperless.username` / `.password` (or `.passwordExistingSecret`) — same shape as before, now required at render time.
 
 ### New optional values
 
-- `ftp.allowedExtensions` (default `[".pdf"]`) — extensions accepted by `STOR`; anything else is rejected before any bytes are forwarded.
-- `ftp.pasv.portMin` / `ftp.pasv.portMax` (default `50000`-`50019`, 20 ports) — the PASV port range the Service and container both expose.
-- `ftp.tls.existingSecret.name` — point at your own `kubernetes.io/tls` Secret (e.g. from cert-manager) instead of the self-signed certificate generated in memory at startup. Picked up on renewal without a pod restart.
-- `service.loadBalancerIP` / `service.annotations` — optional passthrough to the now-hardcoded `LoadBalancer` Service.
+- `ftp.allowedExtensions` (default `[".pdf"]`) — extensions accepted by `STOR`.
+- `ftp.pasv.portMin` / `portMax` (default `50000`-`50019`) — PASV port range.
+- `ftp.tls.existingSecret.name` — your own `kubernetes.io/tls` Secret instead of the self-signed default; picked up on renewal without a restart.
+- `service.loadBalancerIP` / `service.annotations` — passthrough to the Service.
 
-### New Kubernetes resources / behavior
+### New Kubernetes behavior
 
-- **Service is now `type: LoadBalancer`** (hardcoded, not a value), exposing the control port (external `21` -> container `2121`) and every PASV port as individual `spec.ports` entries. Your cluster/platform needs to be able to satisfy a `LoadBalancer` Service (cloud LB, MetalLB, klipper-lb on k3s, etc.) — `NodePort` was deliberately not used since it can't sanely carry ~20 ports.
-- **`replicas: 1` is hardcoded** in the Deployment, not a `.Values` knob. PASV session affinity can't survive more than one replica behind an L4 passthrough LoadBalancer.
-- **Container `securityContext` is fully locked down** (`runAsNonRoot`, fixed non-root UID/GID, dropped capabilities, read-only root filesystem, default seccomp profile). Shouldn't require any action unless your cluster enforces stricter pod security policies that conflict with these specific settings.
-- **`readinessProbe` added** (`/readyz`), alongside the existing `livenessProbe` (`/healthz`, semantics narrowed to reflect only the FTP listener's bound state). `/readyz` additionally reflects a background paperless-ngx reachability check — a paperless-ngx outage takes the pod out of Service rotation without restarting it.
+- **`service.type: LoadBalancer`** (hardcoded) exposes the control port (`21` -> `2121`) and the full PASV range. Needs a platform that can satisfy a `LoadBalancer` (cloud LB, MetalLB, k3s klipper-lb, ...) — `NodePort` can't carry ~20 ports.
+- **`replicas: 1`** (hardcoded) — PASV session affinity can't survive multiple replicas behind an L4 LoadBalancer.
+- **`securityContext`** is fully locked down (non-root, dropped capabilities, read-only rootfs, seccomp). Only relevant if your cluster's pod security policies conflict with these.
+- **`readinessProbe`** (`/readyz`) added alongside `livenessProbe` (`/healthz`, now reflecting only the FTP listener). `/readyz` also tracks paperless-ngx reachability, taking the pod out of rotation (not restarting it) during an outage.
 
 ### Example
 
-Before:
-
 ```yaml
+# before
 ftp:
   host: "ftp.example.org:21"
   user: "scanner1"
   password: "secret"
   path: "."
-
 interval: "*/5 * * * *"
-```
 
-After:
-
-```yaml
+# after
 ftp:
   accounts:
     - username: "scanner1"
