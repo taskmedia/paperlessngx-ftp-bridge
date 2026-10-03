@@ -12,6 +12,8 @@ The configuration of the application will be set in the [`values.yaml`](./values
 Everything is pretty straight forward and should be self-explanatory.
 If you think more information should be provided or need help, feel free to open an issue.
 
+Upgrading from an older chart version? See [`docs/MIGRATION.md`](./docs/MIGRATION.md) for breaking-change upgrade notes.
+
 ## Installation
 
 To deploy the Helm chart first copy the [`values.yaml`](./values.yaml)-file and customize your deployment.
