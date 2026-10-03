@@ -13,11 +13,13 @@ jobs:
           fetch-depth: 0
 
       - name: bump release version (Chart.yaml)
+        if: ${{ !github.event.release.prerelease }}
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: yq -i ".version = \"$(echo ${TAG_NAME:1})\"" charts/paperlessngx-ftp-bridge/Chart.yaml
 
       - name: commit version bump
+        if: ${{ !github.event.release.prerelease }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: main
@@ -26,12 +28,14 @@ jobs:
           file_pattern: charts/paperlessngx-ftp-bridge/Chart.yaml
 
       - name: move release tag
+        if: ${{ !github.event.release.prerelease }}
         shell: bash
         run: |
           git tag --force ${{ github.event.release.tag_name }} HEAD
           git push --force origin ${{ github.event.release.tag_name }}
 
       - name: update latest tag
+        if: ${{ !github.event.release.prerelease }}
         shell: bash
         run: |
           git tag --force latest HEAD
@@ -106,11 +110,11 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:latest
             ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:${{ github.event.release.tag_name }}
-            fty4/paperlessngx-ftp-bridge-image:main
-            fty4/paperlessngx-ftp-bridge-image:latest
             fty4/paperlessngx-ftp-bridge-image:${{ github.event.release.tag_name }}
+            ${{ !github.event.release.prerelease && 'ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:latest' || '' }}
+            ${{ !github.event.release.prerelease && 'fty4/paperlessngx-ftp-bridge-image:main' || '' }}
+            ${{ !github.event.release.prerelease && 'fty4/paperlessngx-ftp-bridge-image:latest' || '' }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -165,6 +169,7 @@ jobs:
         run: helm push ./release/*tgz oci://ghcr.io/taskmedia
 
       - name: Update Index
+        if: ${{ !github.event.release.prerelease }}
         env:
           GH_PAGES_URL: github.com/taskmedia/helm
           REPO_NAME: paperlessngx-ftp-bridge
@@ -182,6 +187,7 @@ jobs:
           helm repo index --merge ./repo/index.yaml --url ${HELM_URL} ./repo
 
       - name: Deploy
+        if: ${{ !github.event.release.prerelease }}
         uses: JamesIves/github-pages-deploy-action@v4.8.0
         with:
           repository-name: taskmedia/helm
