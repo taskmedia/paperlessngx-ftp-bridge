@@ -1,0 +1,9 @@
+# Virtual (non-persistent) filesystem for the embedded FTP server
+
+The embedded `ftpserverlib` server needs a `ClientDriver` (an `afero.Fs`) per session, but this bridge has no real file storage — every uploaded PDF goes straight to paperless-ngx and nothing is meant to persist in the FTP layer itself.
+
+We back `AuthUser`'s returned `ClientDriver` with a fresh `afero.NewMemMapFs()` per connection (discarded on disconnect), so `CWD`/`MKD`/`STAT`/`LIST` all work for free against an in-memory tree that is never actually populated. Separately, we implement `ClientDriverExtensionFileTransfer.GetHandle` to intercept the one case we care about — a fresh `STOR` (`O_WRONLY|O_CREATE|O_TRUNC`, no `REST` offset) — and route it to a custom `FileTransfer` that buffers the upload and posts it to paperless-ngx on `Close()` (skipped via `FileTransferError` if the transfer was interrupted). Every other flag combination (`RETR`, resume/`APPE`, and therefore `DELE` on anything) falls through to the empty `MemMapFs` and fails naturally with "file does not exist" — we never special-case rejecting them.
+
+Considered alternative: a real `afero.Fs` (e.g. `afero.NewOsFs()` rooted in a temp dir) that genuinely stores files, with the paperless-ngx upload triggered by a filesystem watcher or explicit `Create`/`Close` wrapping. Rejected — it would require real disk I/O and cleanup for data that's structurally transient, when `GetHandle` already gives us a direct interception point without touching a real filesystem at all.
+
+Consequence: scanners that organize uploads into subdirectories don't error, but the directory structure is silently discarded — only the base filename reaches paperless-ngx. This is intentional (see map standing facts: single flat FTP account, no local disk queue) but will look strange to a reader expecting directories to mean something.
