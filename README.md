@@ -1,7 +1,5 @@
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/taskmedia)](https://artifacthub.io/packages/helm/taskmedia/paperlessngx-ftp-bridge)
 
-> **⚠️ Moved:** This chart now lives in [taskmedia/helm](https://github.com/taskmedia/helm/tree/main/charts/paperlessngx-ftp-bridge). This repository is kept for history only and no longer receives updates.
-
 # Helm chart: paperless-ngx FTP bridge
 
 Kubernetes [Helm](https://helm.sh) chart that embeds an FTP/FTPS server and forwards every uploaded file straight to the paperless-ngx API.
