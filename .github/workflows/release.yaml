@@ -1,11 +1,34 @@
 name: Release
+# Releases are immutable: assets must be attached while the release is still a
+# draft. release-please creates the draft, the build jobs attach to it, and the
+# final job publishes it.
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
 jobs:
-  build-image:
+  release-please:
     runs-on: ubuntu-latest
     if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      release_id: ${{ steps.release.outputs.id }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build-image:
+    needs: release-please
+    runs-on: ubuntu-latest
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge' && needs.release-please.outputs.release_created == 'true'
     permissions:
       contents: read
       packages: write
@@ -22,7 +45,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ needs.release-please.outputs.sha }}
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
@@ -55,6 +78,7 @@ jobs:
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: type=raw,value=${{ needs.release-please.outputs.tag_name }}
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
@@ -68,14 +92,13 @@ jobs:
             linux/amd64
             linux/arm64
             linux/ppc64le
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:${{ github.event.release.tag_name }}
-            fty4/paperlessngx-ftp-bridge-image:${{ github.event.release.tag_name }}
-            ${{ !github.event.release.prerelease && 'ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:latest' || '' }}
-            ${{ !github.event.release.prerelease && 'fty4/paperlessngx-ftp-bridge-image:main' || '' }}
-            ${{ !github.event.release.prerelease && 'fty4/paperlessngx-ftp-bridge-image:latest' || '' }}
+            fty4/paperlessngx-ftp-bridge-image:${{ needs.release-please.outputs.tag_name }}
+            ghcr.io/taskmedia/paperlessngx-ftp-bridge-image:latest
+            fty4/paperlessngx-ftp-bridge-image:main
+            fty4/paperlessngx-ftp-bridge-image:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -107,15 +130,16 @@ jobs:
 
   build-binaries:
     name: Build binaries for release
+    needs: release-please
     runs-on: ubuntu-latest
-    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge' && needs.release-please.outputs.release_created == 'true'
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ needs.release-please.outputs.sha }}
 
       - name: Build binaries
         run: |
@@ -135,7 +159,8 @@ jobs:
       - name: Upload artifacts to existing release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          draft: true
           files: |
             ./bin/paperlessngx-ftp-bridge-linux-amd64
             ./bin/paperlessngx-ftp-bridge-linux-arm64
@@ -146,18 +171,30 @@ jobs:
             ./bin/paperlessngx-ftp-bridge-windows-amd64.exe
             ./bin/paperlessngx-ftp-bridge-windows-386.exe
 
-  update-latest-tag:
-    needs: [build-image, build-binaries]
+  publish-release:
+    needs: [release-please, build-image, build-binaries]
     runs-on: ubuntu-latest
-    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge' && !github.event.release.prerelease
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release-please.outputs.sha }}
+
+      # Drafts are not resolvable by tag, so address the release by id.
+      # target_commitish pins the tag GitHub creates on publish to the built commit.
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.release-please.outputs.release_id }}
+          RELEASE_SHA: ${{ needs.release-please.outputs.sha }}
+        run: |
+          gh api --method PATCH "repos/${{ github.repository }}/releases/${RELEASE_ID}" \
+            -F draft=false -f target_commitish="${RELEASE_SHA}"
 
       - name: update latest tag
-        shell: bash
         run: |
-          git tag --force latest "$GITHUB_SHA"
+          git tag --force latest "${{ needs.release-please.outputs.sha }}"
           git push --force origin latest
