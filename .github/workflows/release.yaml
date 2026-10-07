@@ -14,7 +14,6 @@ jobs:
       pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
-      release_id: ${{ steps.release.outputs.id }}
       tag_name: ${{ steps.release.outputs.tag_name }}
       sha: ${{ steps.release.outputs.sha }}
     steps:
@@ -183,14 +182,17 @@ jobs:
         with:
           ref: ${{ needs.release-please.outputs.sha }}
 
-      # Drafts are not resolvable by tag, so address the release by id.
+      # Drafts are not resolvable by tag via the tags endpoint, so find the id in the release list.
       # target_commitish pins the tag GitHub creates on publish to the built commit.
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_ID: ${{ needs.release-please.outputs.release_id }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
           RELEASE_SHA: ${{ needs.release-please.outputs.sha }}
         run: |
+          RELEASE_ID=$(gh api --paginate "repos/${{ github.repository }}/releases" \
+            -q ".[] | select(.draft and .tag_name == \"${TAG_NAME}\") | .id")
+          test -n "${RELEASE_ID}"
           gh api --method PATCH "repos/${{ github.repository }}/releases/${RELEASE_ID}" \
             -F draft=false -f target_commitish="${RELEASE_SHA}"
 
