@@ -3,31 +3,7 @@ on:
   release:
     types: [published]
 jobs:
-  version-bump:
-    runs-on: ubuntu-latest
-    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: move release tag
-        if: ${{ !github.event.release.prerelease }}
-        shell: bash
-        run: |
-          git tag --force ${{ github.event.release.tag_name }} HEAD
-          git push --force origin ${{ github.event.release.tag_name }}
-
-      - name: update latest tag
-        if: ${{ !github.event.release.prerelease }}
-        shell: bash
-        run: |
-          git tag --force latest HEAD
-          git push --force origin latest
-
   build-image:
-    needs: version-bump
     runs-on: ubuntu-latest
     if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
     permissions:
@@ -131,7 +107,6 @@ jobs:
 
   build-binaries:
     name: Build binaries for release
-    needs: version-bump
     runs-on: ubuntu-latest
     if: github.repository == 'taskmedia/paperlessngx-ftp-bridge'
     permissions:
@@ -170,3 +145,19 @@ jobs:
             ./bin/paperlessngx-ftp-bridge-darwin-arm64
             ./bin/paperlessngx-ftp-bridge-windows-amd64.exe
             ./bin/paperlessngx-ftp-bridge-windows-386.exe
+
+  update-latest-tag:
+    needs: [build-image, build-binaries]
+    runs-on: ubuntu-latest
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge' && !github.event.release.prerelease
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: update latest tag
+        shell: bash
+        run: |
+          git tag --force latest "$GITHUB_SHA"
+          git push --force origin latest
