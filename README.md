@@ -1,23 +1,20 @@
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/taskmedia)](https://artifacthub.io/packages/helm/taskmedia/paperlessngx-ftp-bridge)
 
-# Helm chart: paperless-ngx FTP bridge
+# paperless-ngx FTP bridge
 
-Kubernetes [Helm](https://helm.sh) chart that embeds an FTP/FTPS server and forwards every uploaded file straight to the paperless-ngx API.
+An embedded FTP/FTPS server that forwards every uploaded file straight to the paperless-ngx API.
 
 Your scanner connects directly to this bridge over FTP; there's no separate FTP server to run or keep in sync, and uploads reach paperless-ngx the moment the transfer finishes.
 
-## Configuration
+## Helm chart
 
-The configuration of the application will be set in the [`values.yaml`](./values.yaml)-file.
-Everything is pretty straight forward and should be self-explanatory.
-If you think more information should be provided or need help, feel free to open an issue.
+The Helm chart for this application is maintained in [taskmedia/helm](https://github.com/taskmedia/helm), not in this repository:
 
-Upgrading from an older chart version? See [`docs/MIGRATION.md`](./docs/MIGRATION.md) for breaking-change upgrade notes.
+- Source: [`charts/paperlessngx-ftp-bridge`](https://github.com/taskmedia/helm/tree/main/charts/paperlessngx-ftp-bridge)
+- Upgrade notes: [`docs/MIGRATION.md`](https://github.com/taskmedia/helm/blob/main/charts/paperlessngx-ftp-bridge/docs/MIGRATION.md)
+- Issues and pull requests for the chart belong in [taskmedia/helm](https://github.com/taskmedia/helm/issues)
 
 ## Installation
-
-To deploy the Helm chart first copy the [`values.yaml`](./values.yaml)-file and customize your deployment.
-After it was modified you can deploy the chart with the following command.
 
 ```bash
 $ helm repo add taskmedia https://helm.task.media
