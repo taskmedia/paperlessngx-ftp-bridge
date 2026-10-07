@@ -200,3 +200,86 @@ jobs:
         run: |
           git tag --force latest "${{ needs.release-please.outputs.sha }}"
           git push --force origin latest
+
+  bump-helm-chart:
+    name: Open chart bump PR in taskmedia/helm
+    needs: [release-please, publish-release]
+    runs-on: ubuntu-latest
+    if: github.repository == 'taskmedia/paperlessngx-ftp-bridge' && needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+    env:
+      HELM_REPO: taskmedia/helm
+      CHART_FILE: charts/paperlessngx-ftp-bridge/Chart.yaml
+      TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      # The token must come from an app (or PAT), not GITHUB_TOKEN: PRs opened
+      # with GITHUB_TOKEN do not trigger the helm repo's lint-test workflow.
+      - name: Create helm repo token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.HELM_BRIDGE_APP_ID }}
+          private-key: ${{ secrets.HELM_BRIDGE_APP_PRIVATE_KEY }}
+          owner: taskmedia
+          repositories: helm
+
+      - name: Checkout helm repo
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.HELM_REPO }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Bump appVersion and chart version
+        id: bump
+        run: |
+          APP_VERSION="${TAG_NAME#v}"
+          CURRENT_APP_VERSION=$(yq '.appVersion' "${CHART_FILE}")
+          if [ "${CURRENT_APP_VERSION}" = "${APP_VERSION}" ]; then
+            echo "appVersion already ${APP_VERSION}, nothing to do"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHART_VERSION=$(yq '.version' "${CHART_FILE}")
+          NEW_CHART_VERSION="${CHART_VERSION%.*}.$(( ${CHART_VERSION##*.} + 1 ))"
+
+          # sed keeps the comments in Chart.yaml intact, unlike a yq rewrite
+          sed -i -E "s/^appVersion: .*/appVersion: \"${APP_VERSION}\"/" "${CHART_FILE}"
+          sed -i -E "s/^version: .*/version: ${NEW_CHART_VERSION}/" "${CHART_FILE}"
+
+          {
+            echo "changed=true"
+            echo "app_version=${APP_VERSION}"
+            echo "chart_version=${NEW_CHART_VERSION}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_VERSION: ${{ steps.bump.outputs.app_version }}
+          CHART_VERSION: ${{ steps.bump.outputs.chart_version }}
+        run: |
+          BRANCH="chore/paperlessngx-ftp-bridge-${APP_VERSION}"
+
+          if [ -n "$(gh pr list --repo "${HELM_REPO}" --head "${BRANCH}" --state all --json number --jq '.[].number')" ]; then
+            echo "PR for ${BRANCH} already exists, skipping"
+            exit 0
+          fi
+
+          git config user.name "paperlessngx-ftp-bridge release bot"
+          git config user.email "noreply@github.com"
+          git checkout -b "${BRANCH}"
+          git add "${CHART_FILE}"
+          git commit -m "chore(paperlessngx-ftp-bridge): bump app to ${APP_VERSION}"
+          git push origin "${BRANCH}"
+
+          gh pr create --repo "${HELM_REPO}" --head "${BRANCH}" --base main \
+            --title "chore(paperlessngx-ftp-bridge): bump app to ${APP_VERSION}" \
+            --body "Automated bump after [${TAG_NAME}](https://github.com/${{ github.repository }}/releases/tag/${TAG_NAME}).
+
+          - \`appVersion\`: ${APP_VERSION}
+          - chart \`version\`: ${CHART_VERSION}
+
+          Review the [release notes](https://github.com/${{ github.repository }}/releases/tag/${TAG_NAME}) for values or config changes before merging. Merging publishes the chart."
