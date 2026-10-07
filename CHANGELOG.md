@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.1.1](https://github.com/taskmedia/paperlessngx-ftp-bridge/compare/v2.1.0...v2.1.1) (2026-10-07)
+
+
+### Continuous Integration
+
+* count ci, chore and docs commits in releases ([#114](https://github.com/taskmedia/paperlessngx-ftp-bridge/issues/114)) ([a307d4d](https://github.com/taskmedia/paperlessngx-ftp-bridge/commit/a307d4da5ffe0e1b0505d6740311fea7876633f5))
+* open helm chart bump pr after release ([#113](https://github.com/taskmedia/paperlessngx-ftp-bridge/issues/113)) ([c050b57](https://github.com/taskmedia/paperlessngx-ftp-bridge/commit/c050b5795a5bf08592ca38ffc9c127538c1ebd19))
+* skip tests on release-please prs ([#112](https://github.com/taskmedia/paperlessngx-ftp-bridge/issues/112)) ([dcc4b03](https://github.com/taskmedia/paperlessngx-ftp-bridge/commit/dcc4b03e3be9f73587ba54be4e7ce8fbf6195d79))
+
 ## [2.1.0](https://github.com/taskmedia/paperlessngx-ftp-bridge/compare/v2.0.1...v2.1.0) (2026-10-07)
 
 
