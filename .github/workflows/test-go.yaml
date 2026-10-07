@@ -5,6 +5,10 @@ on:
     branches:
       - main
   pull_request:
+    # release-please PRs only touch these files; the code was tested before merge
+    paths-ignore:
+      - CHANGELOG.md
+      - .release-please-manifest.json
 
 jobs:
   cross:
