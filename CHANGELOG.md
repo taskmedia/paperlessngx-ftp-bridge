@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.2](https://github.com/taskmedia/paperlessngx-ftp-bridge/compare/v2.1.1...v2.1.2) (2026-10-11)
+
+
+### Documentation
+
+* make readme more visual and easier to scan ([#117](https://github.com/taskmedia/paperlessngx-ftp-bridge/issues/117)) ([1b59491](https://github.com/taskmedia/paperlessngx-ftp-bridge/commit/1b59491a30996e0e0b8c7ecfae1ccc0062b62515))
+
+
+### Continuous Integration
+
+* bump golangci-lint to v2.14.0 ([#118](https://github.com/taskmedia/paperlessngx-ftp-bridge/issues/118)) ([c45ee62](https://github.com/taskmedia/paperlessngx-ftp-bridge/commit/c45ee621c205c33fc52948f8d92c52cd3d0ada9b))
+
 ## [2.1.1](https://github.com/taskmedia/paperlessngx-ftp-bridge/compare/v2.1.0...v2.1.1) (2026-10-07)
 
 
