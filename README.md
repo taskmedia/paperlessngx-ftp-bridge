@@ -36,7 +36,7 @@ flowchart LR
     class paperless sink
 ```
 
-| | |
+| Feature | What you get |
 |---|---|
 | 🚫 **No second FTP server** | Nothing to run, mount or keep in sync. The bridge speaks FTP itself. |
 | ⚡ **Instant** | The document is posted to paperless-ngx the moment the transfer finishes. |
