@@ -19,19 +19,21 @@
 Many document scanners can only "scan to FTP". [paperless-ngx](https://docs.paperless-ngx.com/) wants documents through its API or a consume folder. This bridge closes the gap: it **is** the FTP server, and every file that lands on it is pushed straight to the paperless-ngx API.
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "ui-sans-serif, system-ui, sans-serif", "lineColor": "#8b949e"}, "flowchart": {"curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
 flowchart LR
-    S["📠 Scanner<br/><sub>scan to FTP</sub>"]
-    subgraph B["paperlessngx-ftp-bridge"]
-        direction TB
-        F["Embedded FTP / FTPS server"]
-        V{"Extension<br/>allowed?"}
-        F --> V
-    end
-    P["📄 paperless-ngx<br/><sub>/api/documents/post_document/</sub>"]
+    scanner(["📠<br/><b>Scanner</b><br/><sub>scan to FTP</sub>"])
+    bridge(["🌉<br/><b>FTP bridge</b><br/><sub>embedded FTP / FTPS server</sub>"])
+    paperless(["📄<br/><b>paperless-ngx</b><br/><sub>document archive</sub>"])
 
-    S -- "STOR scan.pdf" --> F
-    V -- "yes · forwarded when transfer completes" --> P
-    V -. "no · rejected" .-> X(("✖"))
+    scanner ==>|"upload"| bridge
+    bridge ==>|"POST /api/documents/post_document/"| paperless
+
+    classDef edge fill:#eef2ff,stroke:#6366f1,stroke-width:2px,color:#1e1b4b
+    classDef core fill:#6366f1,stroke:#4338ca,stroke-width:2px,color:#ffffff
+    classDef sink fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    class scanner edge
+    class bridge core
+    class paperless sink
 ```
 
 | | |
