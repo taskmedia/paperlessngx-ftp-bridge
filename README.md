@@ -21,9 +21,9 @@ Many document scanners can only "scan to FTP". [paperless-ngx](https://docs.pape
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"fontFamily": "ui-sans-serif, system-ui, sans-serif", "lineColor": "#64748b", "textColor": "#0f172a", "edgeLabelBackground": "#e2e8f0"}, "flowchart": {"curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
 flowchart LR
-    scanner(["📠<br/><b>Scanner</b><br/><sub>scan to FTP</sub>"])
-    bridge(["🌉<br/><b>FTP bridge</b><br/><sub>embedded FTP / FTPS server</sub>"])
-    paperless(["📄<br/><b>paperless-ngx</b><br/><sub>document archive</sub>"])
+    scanner["📠<br/><b>Scanner</b><br/><sub>scan to FTP</sub>"]
+    bridge["🌉<br/><b>FTP bridge</b><br/><sub>embedded FTP / FTPS server</sub>"]
+    paperless["📄<br/><b>paperless-ngx</b><br/><sub>document archive</sub>"]
 
     scanner ==>|"upload"| bridge
     bridge ==>|"POST /api/documents/post_document/"| paperless
