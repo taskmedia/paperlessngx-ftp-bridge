@@ -43,7 +43,7 @@ flowchart LR
 | 💾 **No disk** | Uploads are buffered in memory and never persisted. Runs with a read-only root filesystem. |
 | 🔐 **FTPS built in** | Explicit FTPS (`AUTH TLS`) is always on. Self-signed by default, or bring your own cert. |
 | 👥 **Multiple accounts** | One env var per FTP user, e.g. one per scanner. |
-| 🩺 **Kubernetes-ready** | Separate liveness and readiness endpoints, locked-down container, multi-arch image. |
+| ☸️ **Kubernetes-ready** | Separate liveness and readiness endpoints, locked-down container, multi-arch image. |
 
 ## Quick start
 
