@@ -28,8 +28,8 @@ flowchart LR
     scanner ==>|"upload"| bridge
     bridge ==>|"POST /api/documents/post_document/"| paperless
 
-    classDef edge fill:#eef2ff,stroke:#6366f1,stroke-width:2px,color:#1e1b4b
-    classDef core fill:#6366f1,stroke:#4338ca,stroke-width:2px,color:#ffffff
+    classDef edge fill:#e0f2fe,stroke:#0ea5e9,stroke-width:2px,color:#082f49
+    classDef core fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#ffffff
     classDef sink fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
     class scanner edge
     class bridge core
