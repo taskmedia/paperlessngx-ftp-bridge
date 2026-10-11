@@ -4,11 +4,11 @@
 
 **Point your scanner at an FTP address. Get the document in paperless-ngx. Nothing in between.**
 
-[![Release](https://img.shields.io/github/v/release/taskmedia/paperlessngx-ftp-bridge?logo=github)](https://github.com/taskmedia/paperlessngx-ftp-bridge/releases)
-[![Tests](https://img.shields.io/github/actions/workflow/status/taskmedia/paperlessngx-ftp-bridge/test-go.yaml?branch=main&label=tests)](https://github.com/taskmedia/paperlessngx-ftp-bridge/actions/workflows/test-go.yaml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/taskmedia)](https://artifacthub.io/packages/helm/taskmedia/paperlessngx-ftp-bridge)
-![Image](https://img.shields.io/badge/image-scratch%20%C2%B7%20multi--arch-informational?logo=docker)
+[![Release](https://img.shields.io/github/v/release/taskmedia/paperlessngx-ftp-bridge?logo=github&style=flat-square)](https://github.com/taskmedia/paperlessngx-ftp-bridge/releases)
+[![Tests](https://img.shields.io/github/actions/workflow/status/taskmedia/paperlessngx-ftp-bridge/test-go.yaml?branch=main&label=tests&style=flat-square)](https://github.com/taskmedia/paperlessngx-ftp-bridge/actions/workflows/test-go.yaml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](#license)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/taskmedia&style=flat-square)](https://artifacthub.io/packages/helm/taskmedia/paperlessngx-ftp-bridge)
+![Image](https://img.shields.io/badge/image-scratch%20%C2%B7%20multi--arch-informational?logo=docker&style=flat-square)
 
 </div>
 
