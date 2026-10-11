@@ -19,7 +19,7 @@
 Many document scanners can only "scan to FTP". [paperless-ngx](https://docs.paperless-ngx.com/) wants documents through its API or a consume folder. This bridge closes the gap: it **is** the FTP server, and every file that lands on it is pushed straight to the paperless-ngx API.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"fontFamily": "ui-sans-serif, system-ui, sans-serif", "lineColor": "#8b949e"}, "flowchart": {"curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "ui-sans-serif, system-ui, sans-serif", "lineColor": "#64748b", "textColor": "#0f172a", "edgeLabelBackground": "#e2e8f0"}, "flowchart": {"curve": "basis", "nodeSpacing": 50, "rankSpacing": 70}}}%%
 flowchart LR
     scanner(["📠<br/><b>Scanner</b><br/><sub>scan to FTP</sub>"])
     bridge(["🌉<br/><b>FTP bridge</b><br/><sub>embedded FTP / FTPS server</sub>"])
